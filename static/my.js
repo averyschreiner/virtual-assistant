@@ -1,64 +1,115 @@
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-
-let isInitialPrompt = true
 const recognition = new SpeechRecognition()
 recognition.interimResults = true
 recognition.lang = 'en-US'
+recognition.start()
 
-// create initial elements
+let lastSpoke
+let submissionTimeout
+let isInitialPrompt = true
+let hasAttention = false
+let finalText = ''
 let convo = document.querySelector('.convo-wrapper')
+let notAllowed = ['Tab','Shift','Control','Alt','CapsLock','Insert','Home','PageUp','PageDown','ArrowUp',
+'ArrowDown','ArrowLeft','ArrowRight','Meta','Escape','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11',
+'F12','Delete','Backspace',' ']
 
 recognition.addEventListener('result', e => {
     const transcript = Array.from(e.results)
         .map(result => result[0])
         .map(result => result.transcript)
         .join('')
- 
+
         // only take input after name has been called
         if (transcript.includes('Hey Joe')) {
+            hasAttention = true
             if (isInitialPrompt) {
-                createInputMessage(transcript.slice(transcript.lastIndexOf('Hey Joe') + 'Hey Joe'.length + 1))
-                isInitialPrompt = false
+                createInputMessage('')
             }
-            else {
-                p.textContent = transcript.slice(transcript.lastIndexOf('Hey Joe') + 'Hey Joe'.length + 1)
-            }
-            
+
+            // track final text
             if (e.results[0].isFinal) {
-                run_py()
+                finalText += transcript + ' '
             }
+
+            // fill the message box with spoken text
+            p.textContent = transcript.slice(transcript.lastIndexOf('Hey Joe') + 'Hey Joe'.length + 1)
+            finalText = p.textContent + ' '
+    
+            // start a new timer before submission
+            lastSpoke = Date.now()
+            clearTimeout(submissionTimeout)
+            submissionTimeout = setTimeout(() => {
+                run_py()
+            }, 2000)
+        }
+        else if (hasAttention) {
+
+            // fill message with spoken text
+            p.textContent = finalText + ' ' + transcript + ' '
+
+            // track final text
+            if (e.results[0].isFinal) {
+                finalText += transcript + ' '
+            }
+
+            // start a new timer before submission
+            lastSpoke = Date.now()
+            clearTimeout(submissionTimeout)
+            submissionTimeout = setTimeout(() => {
+                run_py()
+            }, 2000)
         }
 })
 
-recognition.addEventListener('end', recognition.start)
+document.addEventListener('keydown', function(e) {
+    if (e.key == 'Enter') {
+        e.preventDefault()
+        lastSpoke = Date.now()
+        run_py()
+    }
+    else {
+        if (isInitialPrompt) {
+            createInputMessage('')
+        }
 
-// document.addEventListener('keydown', function(e) {
-//     console.log('key: ' + e.key)
-//     if (e.key == 'Enter') {
-//         e.preventDefault()
-//         console.log('before run py')
-//         run_py()
-//         console.log('after run py')
-//     }
-// })
+        if (!notAllowed.includes(e.key)) {
+            p.textContent += e.key
+        }
+        else if (e.key === ' ') {
+            p.innerHTML += '&nbsp;'
+        }
+        else if (e.key === 'Backspace') {
+            p.textContent = p.textContent.substring(0, p.textContent.length-1)
+        }
+
+        if (p.textContent === '') {
+            p.style.display = 'none'
+        }
+        else {
+            p.style.display = 'block'
+        }
+    }
+})
 
 function run_py() {
-    if (arg = String(p.textContent)) {
+    hasAttention = false
+    finalText = ''
+    if (p.textContent !== '') {
+        arg = String(p.textContent)
         fetch('/' + arg)
             .then(response => response.text())
             .then(result => {
                 // add response to screen
                 createResponseMessage(result)
-                isInitialPrompt = true
             })
             .catch(error => {
                 console.error(error)
             })
     }
     else {
-        setTimeout(() => {
-            run_py()
-        }, 500)
+        convo.removeChild(message)
+        isInitialPrompt = true
     }
 }
 
@@ -76,6 +127,7 @@ function createInputMessage(text) {
     message.appendChild(p)
     convo.appendChild(message)
     scrollToBottom()
+    isInitialPrompt = false
 }
 
 function createResponseMessage(text) {
@@ -92,9 +144,13 @@ function createResponseMessage(text) {
     message.appendChild(p)
     convo.appendChild(message)
     scrollToBottom()
+    isInitialPrompt = true
 }
 
 function scrollToBottom() {
     window.scrollTo(0, document.body.scrollHeight)
-  }
-recognition.start()
+}
+
+recognition.onend = () => {
+    recognition.start()
+}
