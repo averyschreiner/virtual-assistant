@@ -40,11 +40,10 @@ recognition.addEventListener('result', e => {
             lastSpoke = Date.now()
             clearTimeout(submissionTimeout)
             submissionTimeout = setTimeout(() => {
-                run_py()
+                get_response()
             }, 2000)
         }
         else if (hasAttention) {
-
             // fill message with spoken text
             p.textContent = finalText + ' ' + transcript + ' '
 
@@ -57,7 +56,7 @@ recognition.addEventListener('result', e => {
             lastSpoke = Date.now()
             clearTimeout(submissionTimeout)
             submissionTimeout = setTimeout(() => {
-                run_py()
+                get_response()
             }, 2000)
         }
 })
@@ -66,7 +65,7 @@ document.addEventListener('keydown', function(e) {
     if (e.key == 'Enter') {
         e.preventDefault()
         lastSpoke = Date.now()
-        run_py()
+        get_response()
     }
     else {
         if (isInitialPrompt) {
@@ -92,7 +91,7 @@ document.addEventListener('keydown', function(e) {
     }
 })
 
-function run_py() {
+function get_response() {
     hasAttention = false
     finalText = ''
     if (p.textContent !== '') {
@@ -100,7 +99,10 @@ function run_py() {
         fetch('/' + arg)
             .then(response => response.text())
             .then(result => {
-                // add response to screen
+                // speak response
+                get_speech(result)
+
+                // add response to screen 
                 createResponseMessage(result)
             })
             .catch(error => {
@@ -111,6 +113,17 @@ function run_py() {
         convo.removeChild(message)
         isInitialPrompt = true
     }
+}
+
+function get_speech(result) {
+    fetch('/speak/' + result)
+        .then(response => response.text())
+        .then(result => {
+            document.getElementById('sound').play()
+        })
+        .catch(error => {
+            console.error(error)
+        })
 }
 
 function createInputMessage(text) {
