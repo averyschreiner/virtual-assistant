@@ -12,6 +12,6 @@ def text_response(input):
         #     max_tokens=100
         #     )
         # return response.choices[0].text 
-        return input
+        return str(input).lower()
     except Exception as e:
         return 'Error', str(e)

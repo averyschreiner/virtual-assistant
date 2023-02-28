@@ -7,14 +7,77 @@
 
     <title>Assistant</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/howler/2.2.3/howler.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
 </head>
-<body>    
-    <div class="convo-wrapper" contenteditable></div>
+<body style="background-color: #343a40;">
+    <!-- settings button -->
+    <button id="settings-btn" type="button" style='background-color: #343a40;' class="btn btn-lg position-fixed top-0 end-0" data-bs-toggle="modal" data-bs-target="#modal">
+        <i class="bi bi-gear" style="color: black"></i>
+    </button>
 
+    <!-- main container -->
+    <div class="d-flex justify-content-center">
+        <!-- conversation -->
+        <div id="convo" class="container mx-auto mt-5" style="width: 70%"></div>
+    </div>
+
+    <!-- audio response -->
     <audio id="sound" src="../static/output.mp3"></audio>
 
+    <!-- settings modal -->
+    <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-5" id="modalLabel">Settings</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex flex-column">
+                Access
+                <hr>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="allowMic">
+                    <label class="form-check-label" for="flexSwitchCheckDefault">Microphone (Input)</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="allowSpeakers">
+                    <label class="form-check-label" for="flexSwitchCheckDefault">Speakers (Output)</label>
+                </div>
+                <hr>
+                Colors
+                <hr>
+                <div class="form-check form-check-inline m-2">
+                    <input class="form-control-color" type="color" id="responseBubble" value="#6c757d" title="Choose a color">
+                    <label class="form-label align-bottom">Response Bubbles</label>
+                </div>
+                <div class="form-check form-check-inline m-2">
+                    <input class="form-control-color" type="color" id="responseText" value="#ffffff" title="Choose a color">
+                    <label class="form-label align-bottom">Response Text</label>
+                </div>
+                <div class="form-check form-check-inline m-2">
+                    <input class="form-control-color" type="color" id="myBubble" value="#0d6efd" title="Choose a color">
+                    <label class="form-label align-bottom">My Bubbles</label>
+                </div>
+                <div class="form-check form-check-inline m-2">
+                    <input class="form-control-color" type="color" id="myText" value="#ffffff" title="Choose a color">
+                    <label class="form-label align-bottom">My Text</label>
+                </div>
+                <div class="form-check form-check-inline m-2">
+                    <input class="form-control-color" type="color" id="bgColor" value="#343a40" title="Choose a color">
+                    <label class="form-label align-bottom">Background</label>
+                </div>
+                <button type="button" class="btn btn-primary" onclick="revertDefault()">Default Colors</button>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="updateSettings()">Save changes</button>
+            </div>
+        </div>
+        </div>
+    </div>
+      
     <script src="{{ url_for('static', filename='my.js') }}"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
 </body>
 </html>

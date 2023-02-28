@@ -9,21 +9,6 @@
 from google.cloud import texttospeech
 
 def gen_speech(text):
-
-    # dir_path = 'tortoise/voices/joe'
-    # file_names = os.listdir(dir_path)
-    # file_paths = [os.path.join(dir_path, file_name) for file_name in file_names]
-    # reference_clips = [load_audio(p, 22050) for p in file_paths]
-    # tts = TextToSpeech()
-    # tensor_audio = tts.tts_with_preset(text, voice_samples=reference_clips, preset='standard')
-    # np_audio = tensor_audio.numpy()
-    # wavfile.write('static/spoken_result.wav', 22050, np_audio)
-    
-    # return 'done producing speech'
-    
-
-
-
     # Instantiates a client
     client = texttospeech.TextToSpeechClient()
 
