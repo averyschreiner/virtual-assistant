@@ -5,13 +5,11 @@ openai.api_key = config('KEY')
 
 def text_response(input):
     try:
-        # response = openai.Completion.create(
-        #     model="text-davinci-003",
-        #     prompt= str(input),
-        #     temperature=0,
-        #     max_tokens=100
-        #     )
-        # return response.choices[0].text 
-        return str(input).lower()
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=input,
+            temperature=0.4)
+        return response['choices'][0]['message']['content']
+        # return str(input[len(input) - 1])
     except Exception as e:
         return 'Error', str(e)

@@ -13,7 +13,7 @@
 <body style="background-color: #343a40;">
     <!-- settings button -->
     <button id="settings-btn" type="button" style='background-color: #343a40;' class="btn btn-lg position-fixed top-0 end-0" data-bs-toggle="modal" data-bs-target="#modal">
-        <i class="bi bi-gear" style="color: black"></i>
+        <i class="bi bi-gear" id="settings-icon" style="color: #c8c8c8"></i>
     </button>
 
     <!-- main container -->
@@ -30,44 +30,71 @@
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-            <h1 class="modal-title fs-5" id="modalLabel">Settings</h1>
+            <h1 class="modal-title fs-3" id="modalLabel">Settings</h1>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body d-flex flex-column">
-                Access
+                <div class="fs-5">Access</div>
                 <hr>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="allowMic">
-                    <label class="form-check-label" for="flexSwitchCheckDefault">Microphone (Input)</label>
+                    <label class="form-check-label" for="flexSwitchCheckDefault">Microphone</label>
                 </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="allowSpeakers">
-                    <label class="form-check-label" for="flexSwitchCheckDefault">Speakers (Output)</label>
+                    <label class="form-check-label" for="flexSwitchCheckDefault">Speakers</label>
                 </div>
                 <hr>
-                Colors
+                <div class="fs-5">Preferences</div>
                 <hr>
-                <div class="form-check form-check-inline m-2">
+                <div class="form-group" id="names">
+                    <label for="name1">Assistant Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="Jarvis">
+                </div>
+                <br>
+                <label>Manners</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="ma'am">
+                    <label class="form-check-label" for="flexRadioDefault1">
+                        Ma'am
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="sir">
+                    <label class="form-check-label" for="flexRadioDefault2">
+                        Sir
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="noPref" checked>
+                    <label class="form-check-label" for="flexRadioDefault2">
+                        None
+                    </label>
+                  </div>
+                <hr>
+                <div class="fs-5">Colors</div>
+                <hr>
+                <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="responseBubble" value="#6c757d" title="Choose a color">
                     <label class="form-label align-bottom">Response Bubbles</label>
                 </div>
-                <div class="form-check form-check-inline m-2">
+                <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="responseText" value="#ffffff" title="Choose a color">
                     <label class="form-label align-bottom">Response Text</label>
                 </div>
-                <div class="form-check form-check-inline m-2">
+                <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="myBubble" value="#0d6efd" title="Choose a color">
                     <label class="form-label align-bottom">My Bubbles</label>
                 </div>
-                <div class="form-check form-check-inline m-2">
+                <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="myText" value="#ffffff" title="Choose a color">
                     <label class="form-label align-bottom">My Text</label>
                 </div>
-                <div class="form-check form-check-inline m-2">
+                <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="bgColor" value="#343a40" title="Choose a color">
                     <label class="form-label align-bottom">Background</label>
                 </div>
-                <button type="button" class="btn btn-primary" onclick="revertDefault()">Default Colors</button>
+                <button type="button" class="btn btn-primary m-3" onclick="revertDefault()">Default Colors</button>
             </div>
             <div class="modal-footer">
             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>

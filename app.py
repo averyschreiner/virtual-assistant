@@ -1,6 +1,7 @@
-from flask import Flask, render_template
+from flask import Flask, render_template, request
 from gpt import text_response
 from speech import gen_speech
+import json
 
 app = Flask(__name__)
 
@@ -8,9 +9,11 @@ app = Flask(__name__)
 def home():
     return render_template('index.html')
 
-@app.route('/<arg>', methods = ['POST', 'GET'])
-def run_py(arg):
-    return text_response(arg) 
+@app.route('/chat', methods=['POST'])
+def chat():
+    messages_str = request.data.decode('utf-8')
+    messages = json.loads(messages_str)
+    return (text_response(messages))
 
 @app.route('/speak/<text>')
 def speak(text):
