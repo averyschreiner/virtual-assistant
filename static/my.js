@@ -24,10 +24,16 @@ let notAllowed = ['Tab','Shift','Control','Alt','CapsLock','Insert','Home','Page
 'ArrowDown','ArrowLeft','ArrowRight','Meta','Escape','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11',
 'F12','Delete','Backspace',' ', '\\']
 let assistantName = 'Jarvis'
-let sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that answers questions precisely and to the best of your ability.`}]
+let roles = {"general": "answers questions precisely.", 
+'coder': 'specializes in coding. When asked a coding question, provide pseudo code of the approach to the problem, then the actual code itself, then an explaination of the code.',
+'poet': 'responds in an elegant and poetic way, and often rhymes responses.',
+'brief': "responds in as few words as possible. Don't leave out crucial information, and don't give lots of details in responses.",
+'elaborator': "responds in as much detail as possible. Don't leave any information out whatsoever."}
+let sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles['general']}`}]
 let messages = []
 let addressPref = ''
 let codeCellNum = 0
+let audio = document.getElementById('sound')
 
 // mic input
 recognition.addEventListener('result', e => {
@@ -125,6 +131,7 @@ function get_response() {
     if (bubble.textContent !== '' && !isInitialPrompt) {
         arg = String(bubble.textContent)
         pushMessage({'role': 'user', 'content': arg})
+        createResponseMessage(afterPrompt())
 
         fetch('/chat', {
             method: 'POST',
@@ -158,9 +165,11 @@ function get_response() {
 // spoken response
 function get_speech(result) {
     fetch('/speak/' + result)
-        .then(response => response.text())
-        .then(result => {
-            document.getElementById('sound').play()
+        .then(response => response.blob())
+        .then(blob => {
+            let audioURL = URL.createObjectURL(blob)
+            let audio = new Audio(audioURL)
+            audio.play()
         })
         .catch(error => {
             console.error(error)
@@ -175,11 +184,13 @@ function createInputMessage(text) {
 
     // p element
     bubble = document.createElement('div')
-    bubble.classList.add('card', 'fs-3', 'p-3', 'rounded-4', 'text-wrap', 'myInput')
+    bubble.classList.add('card', 'fs-4', 'p-3', 'rounded-4', 'text-wrap', 'myInput')
     bubble.textContent = text
     bubble.style.maxWidth = '70%'
     bubble.style.backgroundColor = myBubbleColor
     bubble.style.color = myTextColor
+    bubble.style.cursor = 'default'
+    bubble.style.userSelect = 'none'
 
     // attach to dom
     message.appendChild(bubble)
@@ -195,12 +206,14 @@ function createResponseMessage(text) {
 
     // p element
     bubble = document.createElement('pre')
-    bubble.classList.add('card', 'fs-3', 'p-3', 'rounded-4', 'text-wrap', 'response')
-    bubble.innerText = text.replace("<br>", "")
+    bubble.classList.add('card', 'fs-4', 'p-3', 'rounded-4', 'text-wrap', 'response')
+    bubble.textContent = text
     bubble.style.maxWidth = '70%'
     bubble.style.backgroundColor = responseBubbleColor
     bubble.style.color = responseTextColor
     bubble.style.overflowWrap = 'break-word'
+    bubble.style.cursor = 'default'
+    bubble.style.userSelect = 'none'
 
     // attach to dom
     message.appendChild(bubble)
@@ -216,18 +229,19 @@ function createCodeBlock(text) {
 
     // p element
     bubble = document.createElement('div')
-    bubble.classList.add('card', 'fs-3', 'p-3', 'rounded-4', 'text-wrap', 'response')
+    bubble.classList.add('card', 'fs-4', 'p-3', 'rounded-4', 'text-wrap', 'response')
     bubble.style.width = '70%'
     bubble.style.backgroundColor = responseBubbleColor
     bubble.style.color = responseTextColor
-    bubble.innerHTML = `<pre><code id=codeCell${codeCellNum}> ${text} </code></pre>`
+    bubble.style.cursor = 'default'
+    bubble.style.userSelect = 'none'
+    bubble.innerHTML = `<pre><code> ${text.substring(text.indexOf('\n')+1)} </code></pre>`
 
     // copy button
     copyBtn = document.createElement('button')
     copyBtn.classList.add('btn', 'btn-secondary', 'btn-block', 'rounded-pill')
     copyBtn.innerHTML = 'Copy <i class="bi bi-clipboard"></i>'
     copyBtn.addEventListener('click', (event) => {
-        console.log(event.target.previousElementSibling.textContent)
         navigator.clipboard.writeText(event.target.previousElementSibling.textContent)
     })
 
@@ -241,14 +255,24 @@ function createCodeBlock(text) {
 }
 
 function acknowledge() {
-    let acknowledgements = ['How can I help you, ', 'How may I assist you, ', 'Yes ', 'Hello, how can I help you ', 'What can I  do for you ', 'Yes ']
-    let acknowledgementsNone = ["What's up?", "How can I help you?", "How may I assist you today?", "What can I help you with?", "What can I do for you?"]
+    let acknowledgements = ['How can I help you', 'How may I assist you', 'Hello, how can I help you', 'What can I do for you', "What can I help you with"]
 
     if (addressPref == '') {
-        return acknowledgementsNone[Math.floor(Math.random() * acknowledgementsNone.length)]
+        return acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + '?'
     }
     else {
-        return acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + addressPref + '?'
+        return acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + ' ' + addressPref + '?'
+    }
+}
+
+function afterPrompt() {
+    let afterPrompts = ['Let me look into it', 'Let me check for you', 'Looking into it', 'Reading up on it now']
+
+    if (addressPref == '') {
+        return afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + '.'
+    }
+    else {
+        return afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + ' ' + addressPref + '.'
     }
 }
 
@@ -266,7 +290,10 @@ function updateSettings() {
 
     // preferences
     assistantName = document.getElementById('name').value
-    sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that answers questions precisely and to the best of your ability.`}]
+    document.title = assistantName
+
+    personality = document.getElementById('role').value
+    sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles[personality]}`}]
 
     if (document.getElementById("ma'am").checked) {
         addressPref = "ma'am"

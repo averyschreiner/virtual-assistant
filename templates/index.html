@@ -22,9 +22,6 @@
         <div id="convo" class="container mx-auto mt-5" style="width: 70%"></div>
     </div>
 
-    <!-- audio response -->
-    <audio id="sound" src="../static/output.mp3"></audio>
-
     <!-- settings modal -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -48,8 +45,18 @@
                 <div class="fs-5">Preferences</div>
                 <hr>
                 <div class="form-group" id="names">
-                    <label for="name1">Assistant Name</label>
+                    <label>Assistant Name</label>
                     <input type="text" class="form-control" id="name" name="name" value="Jarvis">
+                </div>
+                <div class="form-group" id="roles">
+                    <label>Assistant Personality</label>
+                    <select id="role" class="form-select">
+                        <option value="general">Well-Rounded</option>
+                        <option value="coder">Software Developer</option>
+                        <option value="poet">Poet</option>
+                        <option value="brief">Short 'n Sweet</option>
+                        <option value="elaborator">Elaborator</option>
+                    </select>
                 </div>
                 <br>
                 <label>Manners</label>
