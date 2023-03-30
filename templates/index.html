@@ -21,96 +21,127 @@
         <!-- conversation -->
         <div id="convo" class="container mx-auto mt-5" style="width: 70%"></div>
     </div>
+    <!-- <div class="col-2 position-fixed end-0 d-flex justify-content-center align-items-center" style="height:100vh">
+        <span id="add" class="plus-sign">+</span>
+    </div> -->
 
     <!-- settings modal -->
     <div class="modal fade" id="modal" tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
             <div class="modal-header">
-            <h1 class="modal-title fs-3" id="modalLabel">Settings</h1>
+            <h1 class="modal-title fs-3 label" id="modalLabel">Settings</h1>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body d-flex flex-column">
-                <div class="fs-5">Access</div>
+                <div class="fs-5 label">Access</div>
                 <hr>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="allowMic">
-                    <label class="form-check-label" for="flexSwitchCheckDefault">Microphone</label>
+                    <label class="form-check-label label" for="flexSwitchCheckDefault">Microphone</label>
                 </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="allowSpeakers">
-                    <label class="form-check-label" for="flexSwitchCheckDefault">Speakers</label>
+                    <label class="form-check-label label" for="flexSwitchCheckDefault">Speakers</label>
                 </div>
                 <hr>
-                <div class="fs-5">Preferences</div>
+                <div class="fs-5 label">Preferences</div>
                 <hr>
                 <div class="form-group" id="names">
-                    <label>Assistant Name</label>
+                    <label class="label">Assistant Name</label>
                     <input type="text" class="form-control" id="name" name="name" value="Jarvis">
                 </div>
                 <div class="form-group" id="roles">
-                    <label>Assistant Personality</label>
+                    <label class="label">Assistant Personality</label>
                     <select id="role" class="form-select">
-                        <option value="general">Well-Rounded</option>
-                        <option value="coder">Software Developer</option>
-                        <option value="poet">Poet</option>
-                        <option value="brief">Short 'n Sweet</option>
-                        <option value="elaborator">Elaborator</option>
+                        <option class="label" value="general">Well-Rounded</option>
+                        <option class="label" value="coder">Software Developer</option>
+                        <option class="label" value="poet">Poet</option>
+                        <option class="label" value="brief">Short 'n Sweet</option>
+                        <option class="label" value="elaborator">Elaborator</option>
+                    </select>
+                </div>
+                <div class="form-group" id="languages">
+                    <label class="label">Language</label>
+                    <select id="language" class="form-select">
+                        <option class="label" value="ar">Arabic</option>
+                        <option class="label" value="bn">Bengali</option>
+                        <option class="label" value="en" selected>English</option>
+                        <option class="label" value="fr">French</option>
+                        <option class="label" value="de">German</option>
+                        <option class="label" value="hi">Hindi</option>
+                        <option class="label" value="id">Indonesian</option>
+                        <option class="label" value="it">Italian</option>
+                        <option class="label" value="ja">Japanese</option>
+                        <option class="label" value="zh">Mandarin</option>
+                        <option class="label" value="pt">Portuguese</option>
+                        <option class="label" value="pa">Punjabi</option>
+                        <option class="label" value="ru">Russian</option>
+                        <option class="label" value="es">Spanish</option>
+                        <option class="label" value="tr">Turkish</option>
+                        <option class="label" value="vi">Vietnamese</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="label">Voice Gender</label>
+                    <select id="gender" class="form-select">
+                        <option class="label" value="female">Female</option>
+                        <option class="label" value="male" selected>Male</option>
                     </select>
                 </div>
                 <br>
-                <label>Manners</label>
+                <label class="label">Manners</label>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="flexRadioDefault" id="ma'am">
-                    <label class="form-check-label" for="flexRadioDefault1">
-                        Ma'am
+                    <label class="form-check-label label" for="flexRadioDefault1">
+                        Madam
                     </label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="flexRadioDefault" id="sir">
-                    <label class="form-check-label" for="flexRadioDefault2">
+                    <label class="form-check-label label" for="flexRadioDefault2">
                         Sir
                     </label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="flexRadioDefault" id="noPref" checked>
-                    <label class="form-check-label" for="flexRadioDefault2">
+                    <label class="form-check-label label" for="flexRadioDefault2">
                         None
                     </label>
                   </div>
                 <hr>
-                <div class="fs-5">Colors</div>
+                <div class="fs-5 label">Colors</div>
                 <hr>
                 <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="responseBubble" value="#6c757d" title="Choose a color">
-                    <label class="form-label align-bottom">Response Bubbles</label>
+                    <label class="form-label align-bottom label">Response Messages</label>
                 </div>
                 <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="responseText" value="#ffffff" title="Choose a color">
-                    <label class="form-label align-bottom">Response Text</label>
+                    <label class="form-label align-bottom label">Response Text</label>
                 </div>
                 <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="myBubble" value="#0d6efd" title="Choose a color">
-                    <label class="form-label align-bottom">My Bubbles</label>
+                    <label class="form-label align-bottom label">My Messages</label>
                 </div>
                 <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="myText" value="#ffffff" title="Choose a color">
-                    <label class="form-label align-bottom">My Text</label>
+                    <label class="form-label align-bottom label">My Text</label>
                 </div>
                 <div class="form-check form-check-inline m-3">
                     <input class="form-control-color" type="color" id="bgColor" value="#343a40" title="Choose a color">
-                    <label class="form-label align-bottom">Background</label>
+                    <label class="form-label align-bottom label">Background</label>
                 </div>
-                <button type="button" class="btn btn-primary m-3" onclick="revertDefault()">Default Colors</button>
+                <button type="button" class="btn btn-primary m-3 label" onclick="revertDefault()">Default Colors</button>
             </div>
             <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-            <button type="button" class="btn btn-primary" data-bs-dismiss="modal" onclick="updateSettings()">Save changes</button>
+            <button type="button" class="btn btn-secondary label" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary label" data-bs-dismiss="modal" onclick="updateSettings()">Save changes</button>
             </div>
         </div>
         </div>
     </div>
-      
+
     <script src="{{ url_for('static', filename='my.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
 </body>

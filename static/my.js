@@ -1,10 +1,3 @@
-// recog
-window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
-const recognition = new SpeechRecognition()
-recognition.interimResults = true
-recognition.lang = 'en-US'
-
-// vars
 let lastSpoke
 let submissionTimeout
 let isInitialPrompt = true
@@ -34,6 +27,16 @@ let messages = []
 let addressPref = ''
 let codeCellNum = 0
 let audio = document.getElementById('sound')
+let male = true
+let articleText = ''
+let urls = []
+let lang = 'en'
+
+// recog
+window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
+const recognition = new SpeechRecognition()
+recognition.interimResults = true
+recognition.lang = lang
 
 // mic input
 recognition.addEventListener('result', e => {
@@ -98,6 +101,20 @@ document.addEventListener('keydown', function(e) {
             bubble.contentEditable = false;
             get_response()
         }
+        else if (e.ctrlKey && e.key === 'v') {
+            navigator.clipboard.readText()
+                .then(text => {
+                    if (isInitialPrompt) {
+                        createInputMessage(text)
+                    }
+                    else {
+                        bubble.textContent += text
+                    }
+                })
+                .catch(err => {
+                    console.error(err)
+                })
+        }
         else {
             if (isInitialPrompt) {
                 createInputMessage('')
@@ -128,10 +145,136 @@ document.addEventListener('keydown', function(e) {
 function get_response() {
     hasAttention = false
     finalText = ''
-    if (bubble.textContent !== '' && !isInitialPrompt) {
-        arg = String(bubble.textContent)
-        pushMessage({'role': 'user', 'content': arg})
+    arg = String(bubble.textContent)
+    let regex = /((http|https):\/\/[^\s]+)/g
+    urls = arg.match(regex)
+
+    // spotify command
+    if (arg.includes('on Spotify') || arg.includes('on spotify')) {
+        createResponseMessage(spotifyResponse())
+        arg = arg.replace('on Spotify', '')
+        arg = arg.replace('on spotify', '')
+        arg = arg.slice(arg.lastIndexOf('play') + 4)
+        spotify(arg)
+    }
+    // good morning
+    else if (arg.toLowerCase().includes('good morning') || arg.toLowerCase() == 'gm') {
+        if (addressPref == '') {
+            createResponseMessage(`Good morning!`)
+        }
+        else {
+            createResponseMessage(`Good morning ${addressPref}!`)
+        }
+        need_coords = false
+        city = ''
+        fetch('/weather', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'city': city, 'lat': lat, 'lng': lng, 'need_coords': need_coords})
+        })
+        .then(response => response.text())
+        .then(text => {
+            if (need_coords) {
+                text = 'The weather in ' + city + text
+            }
+            else {
+                text = 'The weather for ' + text
+            }
+            if (speakersAllowed) {
+                get_speech(text)
+            }
+            pushMessage({'role': 'user', 'content': 'Good morning!'})
+            pushMessage({'role': 'assistant', 'content': text})
+            createResponseMessage(text)
+            createResponseMessage('Let me know if there is anything I can help you with! <3')
+        })
+    }
+    // weather command
+    else if (arg.includes('weather')) {
+        createResponseMessage(weatherResponse())
+        let words = arg.split(' ')
+        let city = ''
+        let need_coords = true
+        for (let word of words) {
+            if (word.charAt(0) === word.charAt(0).toUpperCase()) {
+                city += word + ' '
+            }
+        }
+        
+        // get weather for current location
+        if (city == '') {
+            need_coords = false
+        }
+        else {
+            need_coords = true
+        }
+
+        fetch('/weather', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'city': city, 'lat': lat, 'lng': lng, 'need_coords': need_coords})
+        })
+        .then(response => response.text())
+        .then(text => {
+            if (need_coords) {
+                text = 'The weather in ' + city + text
+            }
+            else {
+                text = 'The weather for ' + text
+            }
+            if (speakersAllowed) {
+                get_speech(text)
+            }
+            pushMessage({'role': 'user', 'content': arg})
+            pushMessage({'role': 'assistant', 'content': text})
+            createResponseMessage(text)
+        })
+    }
+    // summarize article given link
+    else if (urls != null) {
+        createResponseMessage(summaryResponse())
+        fetch('/article', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'url': urls[0]})
+        })
+        .then(response => response.text())
+        .then(text => {
+            arg = arg.replace(urls[0], '\n\n---\n\n'+text)
+            pushMessage({'role': 'user', 'content': arg})
+            fetch('/chat', {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(sysMessage.concat(messages))
+            })
+            .then(response => response.text())
+            .then(result => {
+                pushMessage({'role': 'assistant', 'content': result})
+                responses = result.split('```')
+
+                for (let i = 0; i < responses.length; i++) {
+                    let chunkOText = responses[i]
+                    if (i % 2 == 0) {
+                        if (speakersAllowed) {
+                            get_speech(chunkOText)
+                        }
+                        createResponseMessage(chunkOText)
+                    }
+                    else {
+                        createCodeBlock(chunkOText)
+                    }
+                }
+            })
+            .catch(error => console.error(error))
+            })
+        .catch(error => {
+            console.error(error)
+        })
+    }
+    // normal gpt prompt
+    else if (arg !== '' && !isInitialPrompt) {
         createResponseMessage(afterPrompt())
+        pushMessage({'role': 'user', 'content': arg})
 
         fetch('/chat', {
             method: 'POST',
@@ -144,17 +287,21 @@ function get_response() {
             responses = result.split('```')
 
             for (let i = 0; i < responses.length; i++) {
+                let chunkOText = responses[i]
                 if (i % 2 == 0) {
-                    if (speakersAllowed) {get_speech(responses[i])}
-                    createResponseMessage(responses[i])
+                    if (speakersAllowed) {
+                        get_speech(chunkOText)
+                    }
+                    createResponseMessage(chunkOText)
                 }
                 else {
-                    createCodeBlock(responses[i])
+                    createCodeBlock(chunkOText)
                 }
             }
         })
         .catch(error => console.error(error))
     }
+    // mic input expired with no spoken content
     else {
         convo.removeChild(message)
         createResponseMessage('Going idle.')
@@ -164,23 +311,55 @@ function get_response() {
 
 // spoken response
 function get_speech(result) {
-    fetch('/speak/' + result)
-        .then(response => response.blob())
-        .then(blob => {
-            let audioURL = URL.createObjectURL(blob)
-            let audio = new Audio(audioURL)
-            audio.play()
+    let pack = {'text': result, 'lang': lang, 'male': male}
+    fetch('/speak', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(pack)
+    })
+    .then(response => response.blob())
+    .then(blob => {
+        let audioURL = URL.createObjectURL(blob)
+        let audio = new Audio(audioURL)
+        audio.play()
+    })
+    .catch(error => {
+        console.error(error)
+    })
+}
+function translate(lang) {
+    labels = document.getElementsByClassName('label')
+    for (let i = 0; i < labels.length; i++) {
+        fetch('/translate', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'lang': lang, 'text': labels[i].textContent})
+        })
+        .then(response => response.text())
+        .then(text => {
+            labels[i].textContent = text
         })
         .catch(error => {
             console.error(error)
         })
+    }
+}
+
+function spotify(query) {
+    fetch('/spotify_query', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({'query': query})
+    })
+    .then(response => response.text())
+    .then(text => {
+        window.location.href = text
+    })
 }
 
 // on screen text bubble
 function createInputMessage(text) {
-    // message creation
-    message = document.createElement('div')
-    message.classList.add('d-flex', 'justify-content-end', 'mb-3')
+    createMessage('justify-content-end')
 
     // p element
     bubble = document.createElement('div')
@@ -200,9 +379,7 @@ function createInputMessage(text) {
 
 // on screen response bubble
 function createResponseMessage(text) {
-    // message creation
-    message = document.createElement('div')
-    message.classList.add('d-flex', 'justify-content-start', 'mb-3')
+    createMessage('justify-content-start')
 
     // p element
     bubble = document.createElement('pre')
@@ -223,9 +400,7 @@ function createResponseMessage(text) {
 }
 
 function createCodeBlock(text) {
-    // message creation
-    message = document.createElement('div')
-    message.classList.add('d-flex', 'justify-content-start', 'mb-3')
+    createMessage('justify-content-start')
 
     // p element
     bubble = document.createElement('div')
@@ -254,6 +429,12 @@ function createCodeBlock(text) {
     codeCellNum += 1
 }
 
+function createMessage(justify) {
+    // message creation
+    message = document.createElement('div')
+    message.classList.add('d-flex', justify, 'mb-3')
+}
+
 function acknowledge() {
     let acknowledgements = ['How can I help you', 'How may I assist you', 'Hello, how can I help you', 'What can I do for you', "What can I help you with"]
 
@@ -266,7 +447,7 @@ function acknowledge() {
 }
 
 function afterPrompt() {
-    let afterPrompts = ['Let me look into it', 'Let me check for you', 'Looking into it', 'Reading up on it now']
+    let afterPrompts = ['Let me look into it', 'Let me check for you', 'Looking into it']
 
     if (addressPref == '') {
         return afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + '.'
@@ -274,6 +455,21 @@ function afterPrompt() {
     else {
         return afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + ' ' + addressPref + '.'
     }
+}
+
+function spotifyResponse() {
+    let spotifyResponses = ["Good pick! I'm on it.", "You have greate taste!", "Uncontrollable head bopping coming right up!", "Solid choice! Playing it now.", "One of my favorites!"]
+    return spotifyResponses[Math.floor(Math.random() * spotifyResponses.length)]
+}
+
+function summaryResponse() {
+    let summaryResponses = ["Reading up on it now.", "Let me skim this really quick.", "Let me take a look.", "Let's see what we have here."]
+    return summaryResponses[Math.floor(Math.random() * summaryResponses.length)]
+}
+
+function weatherResponse() {
+    let weatherResponses = ['Let me check the forecast briefly.', "Let me read the forecast for the next few hours."]
+    return weatherResponses[Math.floor(Math.random() * weatherResponses.length)]
 }
 
 // adjust to bottom (most recent) of convo
@@ -291,10 +487,14 @@ function updateSettings() {
     // preferences
     assistantName = document.getElementById('name').value
     document.title = assistantName
-
     personality = document.getElementById('role').value
     sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles[personality]}`}]
-
+    lang = document.getElementById('language').value
+    if (lang != recognition.lang) {
+        translate(lang)
+        recognition.lang = lang
+    }
+    male = document.getElementById('gender').value == 'male'
     if (document.getElementById("ma'am").checked) {
         addressPref = "ma'am"
     }
@@ -352,7 +552,7 @@ function revertDefault() {
 
 function pushMessage(message) {
     messages.push(message)
-    while (messages.length >= 8) {
+    while (messages.length >= 10) {
         messages.shift()
         messages.shift()
     }
@@ -361,7 +561,13 @@ function pushMessage(message) {
 // show modal on load for user interacting to play audio
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('settings-btn').click()
+    navigator.geolocation.getCurrentPosition(geoLocation);
 })
+
+function geoLocation(position) {
+    lat = position.coords.latitude
+    lng = position.coords.longitude
+}
 
 // constant listening
 recognition.onend = () => {

@@ -1,6 +1,15 @@
 * {
     font-family: 'Consolas';
 }
+/* .plus-sign {
+    font-size: 4rem;
+    color: #c8c8c8;
+}
+.col-2:hover {
+    box-shadow: black;
+    cursor: pointer;
+    z-index: 1;
+} */
 ::-webkit-scrollbar {
     width: 10px;
 }
