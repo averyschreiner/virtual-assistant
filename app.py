@@ -62,14 +62,13 @@ def chat():
             
                 return response['choices'][0]['text']
             
-            except Exception as e:
-                return 'Error', str(e)
-            
+            except:
+                return 'An error occurred, please refresh the page.'
         else:
             return re.sub("\n```|```\n", "```", gpt_text)
         
-    except Exception as e:
-        return 'Error', str(e)
+    except:
+        return 'An error occurred, please refresh the page.'
 
 @app.route('/speak', methods=['POST'])
 def speak():

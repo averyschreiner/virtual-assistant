@@ -4,6 +4,7 @@ let isInitialPrompt = true
 let hasAttention = false
 let micAllowed = false
 let speakersAllowed = false
+let spotifyDesktop = false
 let iconColor = '#c8c8c8'
 let responseBubbleColor = '#6c757d'
 let responseTextColor = '#ffffff'
@@ -12,7 +13,7 @@ let myTextColor = '#ffffff'
 let bgColor = '#343a40'
 let finalText = ''
 let convo = document.getElementById('convo')
-let settingsModal = document.getElementById('modal')
+let settingsModal = document.getElementById('settings')
 let notAllowed = ['Tab','Shift','Control','Alt','CapsLock','Insert','Home','PageUp','PageDown','ArrowUp',
 'ArrowDown','ArrowLeft','ArrowRight','Meta','Escape','F1','F2','F3','F4','F5','F6','F7','F8','F9','F10','F11',
 'F12','Delete','Backspace',' ', '\\']
@@ -31,6 +32,7 @@ let male = true
 let articleText = ''
 let urls = []
 let lang = 'en'
+let textToBeSpoken = ''
 
 // recog
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -50,7 +52,7 @@ recognition.addEventListener('result', e => {
         if (transcript.includes(assistantName)) {
             hasAttention = true
             if (isInitialPrompt) {
-                createResponseMessage(acknowledge())
+                acknowledge()
                 createInputMessage('')
             }
 
@@ -150,10 +152,9 @@ function get_response() {
     urls = arg.match(regex)
 
     // spotify command
-    if (arg.includes('on Spotify') || arg.includes('on spotify')) {
-        createResponseMessage(spotifyResponse())
-        arg = arg.replace('on Spotify', '')
-        arg = arg.replace('on spotify', '')
+    if (arg.toLowerCase().includes('on spotify')) {
+        spotifyResponse()
+        arg = arg.toLowerCase().replace('on spotify', '')
         arg = arg.slice(arg.lastIndexOf('play') + 4)
         spotify(arg)
     }
@@ -191,16 +192,16 @@ function get_response() {
     }
     // weather command
     else if (arg.includes('weather')) {
-        createResponseMessage(weatherResponse())
+        weatherResponse()
+        arg = arg.trim()
         let words = arg.split(' ')
         let city = ''
         let need_coords = true
         for (let word of words) {
-            if (word.charAt(0) === word.charAt(0).toUpperCase()) {
+            if (word.charAt(0) == word.charAt(0).toUpperCase()) {
                 city += word + ' '
             }
         }
-        
         // get weather for current location
         if (city == '') {
             need_coords = false
@@ -232,7 +233,7 @@ function get_response() {
     }
     // summarize article given link
     else if (urls != null) {
-        createResponseMessage(summaryResponse())
+        summaryResponse()
         fetch('/article', {
             method: 'POST',
             headers: {'Content-Type': 'application/json'},
@@ -256,13 +257,16 @@ function get_response() {
                     let chunkOText = responses[i]
                     if (i % 2 == 0) {
                         if (speakersAllowed) {
-                            get_speech(chunkOText)
+                            textToBeSpoken += chunkOText
                         }
                         createResponseMessage(chunkOText)
                     }
                     else {
                         createCodeBlock(chunkOText)
                     }
+                }
+                if (speakersAllowed) {
+                    get_speech(textToBeSpoken)
                 }
             })
             .catch(error => console.error(error))
@@ -273,7 +277,7 @@ function get_response() {
     }
     // normal gpt prompt
     else if (arg !== '' && !isInitialPrompt) {
-        createResponseMessage(afterPrompt())
+        afterPrompt()
         pushMessage({'role': 'user', 'content': arg})
 
         fetch('/chat', {
@@ -290,7 +294,7 @@ function get_response() {
                 let chunkOText = responses[i]
                 if (i % 2 == 0) {
                     if (speakersAllowed) {
-                        get_speech(chunkOText)
+                        textToBeSpoken += chunkOText
                     }
                     createResponseMessage(chunkOText)
                 }
@@ -298,13 +302,18 @@ function get_response() {
                     createCodeBlock(chunkOText)
                 }
             }
+            if (speakersAllowed) {
+                get_speech(textToBeSpoken)
+            }
         })
         .catch(error => console.error(error))
     }
     // mic input expired with no spoken content
     else {
         convo.removeChild(message)
-        createResponseMessage('Going idle.')
+        if (lang == 'en') {
+            createResponseMessage('Going idle.')
+        }
         isInitialPrompt = true
     }
 }
@@ -322,12 +331,13 @@ function get_speech(result) {
         let audioURL = URL.createObjectURL(blob)
         let audio = new Audio(audioURL)
         audio.play()
+        textToBeSpoken = ''
     })
     .catch(error => {
         console.error(error)
     })
 }
-function translate(lang) {
+function translateSettings(lang) {
     labels = document.getElementsByClassName('label')
     for (let i = 0; i < labels.length; i++) {
         fetch('/translate', {
@@ -353,7 +363,14 @@ function spotify(query) {
     })
     .then(response => response.text())
     .then(text => {
-        window.location.href = text
+        if (spotifyDesktop) {
+            window.location.href = text
+        }
+        else {
+            let trackURI = text.split(":")[2]
+            let url = "https://open.spotify.com/track/" + trackURI
+            window.open(url, "_blank")
+        }
     })
 }
 
@@ -436,40 +453,58 @@ function createMessage(justify) {
 }
 
 function acknowledge() {
-    let acknowledgements = ['How can I help you', 'How may I assist you', 'Hello, how can I help you', 'What can I do for you', "What can I help you with"]
+    if (lang != 'en') {return} // lang support comming soon
 
+    let acknowledgements = ['How can I help you', 'How may I assist you', 'Hello, how can I help you', 'What can I do for you', "What can I help you with"]
+    let picked = ''
     if (addressPref == '') {
-        return acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + '?'
+        picked = acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + '?'
     }
     else {
-        return acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + ' ' + addressPref + '?'
+        picked = acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + ' ' + addressPref + '?'
     }
+    createResponseMessage(picked)
 }
 
 function afterPrompt() {
-    let afterPrompts = ['Let me look into it', 'Let me check for you', 'Looking into it']
+    if (lang != 'en') {return} // lang support comming soon
 
+    let afterPrompts = ['Let me look into it', 'Let me check for you', 'Looking into it']
+    let picked = ''
     if (addressPref == '') {
-        return afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + '.'
+        picked = afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + '.'
     }
     else {
-        return afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + ' ' + addressPref + '.'
+        picked = afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + ' ' + addressPref + '.'
     }
+    createResponseMessage(picked)
 }
 
 function spotifyResponse() {
+    if (lang != 'en') {return} // lang support comming soon
+
+    let picked = ''
     let spotifyResponses = ["Good pick! I'm on it.", "You have greate taste!", "Uncontrollable head bopping coming right up!", "Solid choice! Playing it now.", "One of my favorites!"]
-    return spotifyResponses[Math.floor(Math.random() * spotifyResponses.length)]
+    picked = spotifyResponses[Math.floor(Math.random() * spotifyResponses.length)]
+    createResponseMessage(picked)
 }
 
 function summaryResponse() {
+    if (lang != 'en') {return} // lang support comming soon
+
+    let picked = ''
     let summaryResponses = ["Reading up on it now.", "Let me skim this really quick.", "Let me take a look.", "Let's see what we have here."]
-    return summaryResponses[Math.floor(Math.random() * summaryResponses.length)]
+    picked = summaryResponses[Math.floor(Math.random() * summaryResponses.length)]
+    createResponseMessage(picked)
 }
 
 function weatherResponse() {
+    if (lang != 'en') {return} // lang support comming soon
+
+    let picked = ''
     let weatherResponses = ['Let me check the forecast briefly.', "Let me read the forecast for the next few hours."]
-    return weatherResponses[Math.floor(Math.random() * weatherResponses.length)]
+    picked = weatherResponses[Math.floor(Math.random() * weatherResponses.length)]
+    createResponseMessage(picked)
 }
 
 // adjust to bottom (most recent) of convo
@@ -483,6 +518,7 @@ function updateSettings() {
     // access
     micAllowed = document.getElementById('allowMic').checked
     speakersAllowed = document.getElementById('allowSpeakers').checked
+    spotifyDesktop = document.getElementById('spotifyDesktop').checked
 
     // preferences
     assistantName = document.getElementById('name').value
@@ -491,7 +527,7 @@ function updateSettings() {
     sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles[personality]}`}]
     lang = document.getElementById('language').value
     if (lang != recognition.lang) {
-        translate(lang)
+        translateSettings(lang)
         recognition.lang = lang
     }
     male = document.getElementById('gender').value == 'male'
@@ -521,7 +557,6 @@ function updateSettings() {
             recognition.start()
         }
         catch (error) {
-            console.error(error)
         }
     }
     else {
