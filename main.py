@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, send_file
+from flask import Flask, render_template, request, Response
 from google.cloud import texttospeech
 from google.cloud import translate_v2 as translate
 import googlemaps
@@ -10,7 +10,6 @@ import openai
 import re
 import spotipy
 import requests
-
 
 app = Flask(__name__)
 openai.api_key = config('OPENAI_SECRET')
@@ -95,11 +94,9 @@ def speak():
         voice=voice,
         audio_config=audio_config
     )
+    
+    return Response(response.audio_content, mimetype='audio/mp3')
 
-    with open('output.mp3', 'wb') as out:
-        out.write(response.audio_content)
-
-    return send_file('output.mp3', as_attachment=True) 
 
 @app.route('/article', methods=['POST'])
 def article():

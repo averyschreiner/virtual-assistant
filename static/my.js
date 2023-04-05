@@ -484,7 +484,7 @@ function spotifyResponse() {
     if (lang != 'en') {return} // lang support comming soon
 
     let picked = ''
-    let spotifyResponses = ["Good pick! I'm on it.", "You have greate taste!", "Uncontrollable head bopping coming right up!", "Solid choice! Playing it now.", "One of my favorites!"]
+    let spotifyResponses = ["Good pick! I'm on it.", "You have greate taste!", "Solid choice! Playing it now.", "One of my favorites!"]
     picked = spotifyResponses[Math.floor(Math.random() * spotifyResponses.length)]
     createResponseMessage(picked)
 }
