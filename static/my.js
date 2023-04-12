@@ -26,7 +26,6 @@ let roles = {"general": "answers questions precisely.",
 let sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles['general']}`}]
 let messages = []
 let addressPref = ''
-let codeCellNum = 0
 let audio = document.getElementById('sound')
 let male = true
 let articleText = ''
@@ -87,58 +86,8 @@ recognition.addEventListener('result', e => {
             lastSpoke = Date.now()
             clearTimeout(submissionTimeout)
             submissionTimeout = setTimeout(() => {
-                bubble.contentEditable = false;
                 get_response()
             }, 2000)
-        }
-    }
-})
-
-// keyboard input
-document.addEventListener('keydown', function(e) {
-    if (settingsModal.style.display === "none") {
-        if (e.key == 'Enter') {
-            e.preventDefault()
-            lastSpoke = Date.now()
-            bubble.contentEditable = false;
-            get_response()
-        }
-        else if (e.ctrlKey && e.key === 'v') {
-            navigator.clipboard.readText()
-                .then(text => {
-                    if (isInitialPrompt) {
-                        createInputMessage(text)
-                    }
-                    else {
-                        bubble.textContent += text
-                    }
-                })
-                .catch(err => {
-                    console.error(err)
-                })
-        }
-        else {
-            if (isInitialPrompt) {
-                createInputMessage('')
-            }
-
-            if (!notAllowed.includes(e.key)) {
-                bubble.textContent += e.key
-                scrollToBottom()
-            }
-            else if (e.key === ' ') {
-                e.preventDefault()
-                bubble.innerHTML += ' '
-                scrollToBottom()
-            }
-            else if (e.key === 'Backspace') {
-                bubble.textContent = bubble.textContent.substring(0, bubble.textContent.length-1)
-            }
-
-            if (bubble.textContent === '') {
-                convo.removeChild(message)
-                isInitialPrompt = true
-            }
         }
     }
 })
@@ -158,6 +107,8 @@ function get_response() {
         arg = arg.slice(arg.lastIndexOf('play') + 4)
         spotify(arg)
     }
+    // shut down
+    // else if (arg.toLowerCase() == 'shut down')
     // good morning
     else if (arg.toLowerCase().includes('good morning') || arg.toLowerCase() == 'gm') {
         if (addressPref == '') {
@@ -291,12 +242,14 @@ function get_response() {
             responses = result.split('```')
 
             for (let i = 0; i < responses.length; i++) {
-                let chunkOText = responses[i]
+                let chunkOText = responses[i].trim()
                 if (i % 2 == 0) {
                     if (speakersAllowed) {
                         textToBeSpoken += chunkOText
                     }
-                    createResponseMessage(chunkOText)
+                    if (chunkOText != '') {
+                        createResponseMessage(chunkOText)
+                    }
                 }
                 else {
                     createCodeBlock(chunkOText)
@@ -379,18 +332,17 @@ function createInputMessage(text) {
     createMessage('justify-content-end')
 
     // p element
-    bubble = document.createElement('div')
+    bubble = document.createElement('pre')
     bubble.classList.add('card', 'fs-4', 'p-3', 'rounded-4', 'text-wrap', 'myInput')
     bubble.textContent = text
     bubble.style.maxWidth = '70%'
     bubble.style.backgroundColor = myBubbleColor
     bubble.style.color = myTextColor
-    bubble.style.cursor = 'default'
-    bubble.style.userSelect = 'none'
 
     // attach to dom
     message.appendChild(bubble)
     convo.appendChild(message)
+    scrollToBottom()
     isInitialPrompt = false
 }
 
@@ -405,9 +357,6 @@ function createResponseMessage(text) {
     bubble.style.maxWidth = '70%'
     bubble.style.backgroundColor = responseBubbleColor
     bubble.style.color = responseTextColor
-    bubble.style.overflowWrap = 'break-word'
-    bubble.style.cursor = 'default'
-    bubble.style.userSelect = 'none'
 
     // attach to dom
     message.appendChild(bubble)
@@ -425,25 +374,26 @@ function createCodeBlock(text) {
     bubble.style.width = '70%'
     bubble.style.backgroundColor = responseBubbleColor
     bubble.style.color = responseTextColor
-    bubble.style.cursor = 'default'
-    bubble.style.userSelect = 'none'
-    bubble.innerHTML = `<pre><code> ${text.substring(text.indexOf('\n')+1)} </code></pre>`
+    codetag = document.createElement('code')
+    codetag.textContent = text
 
     // copy button
     copyBtn = document.createElement('button')
     copyBtn.classList.add('btn', 'btn-secondary', 'btn-block', 'rounded-pill')
     copyBtn.innerHTML = 'Copy <i class="bi bi-clipboard"></i>'
     copyBtn.addEventListener('click', (event) => {
-        navigator.clipboard.writeText(event.target.previousElementSibling.textContent)
+        navigator.clipboard.writeText(event.target.parentNode.textContent.slice(0,-5))
     })
-
+    
     // attach to dom
+    pre = document.createElement('pre')
+    pre.appendChild(codetag)
+    bubble.appendChild(pre)
     bubble.appendChild(copyBtn)
     message.appendChild(bubble)
     convo.appendChild(message)
     scrollToBottom()
     isInitialPrompt = true
-    codeCellNum += 1
 }
 
 function createMessage(justify) {
@@ -610,3 +560,26 @@ recognition.onend = () => {
         recognition.start()
     }
 }
+
+let textarea = document.getElementById('textarea')
+textarea.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault()
+        if (textarea.value != '') {
+            createInputMessage(textarea.value)
+            lastSpoke = Date.now()
+            get_response()
+        }
+        textarea.value = ''
+    }
+});
+
+let submitButton = document.getElementById('submitButton') 
+submitButton.addEventListener('click', function() {
+    if (textarea.value != '') {
+        createInputMessage(textarea.value)
+        lastSpoke = Date.now()
+        get_response()
+    }
+    textarea.value = ''
+})

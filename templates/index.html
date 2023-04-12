@@ -20,11 +20,23 @@
     <!-- main container -->
     <div class="d-flex justify-content-center">
         <!-- conversation -->
-        <div id="convo" class="container mx-auto mt-5" style="width: 70%"></div>
+        <div id="convo" class="container mx-auto my-5" style="width: 100%"></div>
+        <div class="position-fixed bottom-0 start-50 translate-middle-x pb-3" style="width:70%;">
+            <div class="input-group">
+                <textarea id="textarea" placeholder="Send a message..." class="form-control" style="height: 45px; resize: none; overflow-y:hidden;"></textarea>
+                <!-- <button class="btn btn-secondary" type="button" style="background-color: #343a40;">
+                    <svg width="24" height="24" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16" style="color: #c8c8c8">
+                        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+                    </svg>
+                </button> -->
+                <button id="submitButton" class="btn btn-secondary" type="button" style="background-color: #343a40;" style="color: #c8c8c8">
+                    <svg width="24" height="24" fill="currentColor" class="bi bi-arrow-up" viewBox="0 0 16 16">
+                        <path fill-rule="evenodd" d="M8 15a.5.5 0 0 0 .5-.5V2.707l3.146 3.147a.5.5 0 0 0 .708-.708l-4-4a.5.5 0 0 0-.708 0l-4 4a.5.5 0 1 0 .708.708L7.5 2.707V14.5a.5.5 0 0 0 .5.5z"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
     </div>
-    <!-- <div class="col-2 position-fixed end-0 d-flex justify-content-center align-items-center" style="height:100vh">
-        <span id="add" class="plus-sign">+</span>
-    </div> -->
 
     <!-- how to guide modal -->
     <div class="modal fade" id="howTo" aria-hidden="true">
@@ -39,7 +51,7 @@
                         <thead>
                             <tr>
                                 <th scope="col">Action</th>
-                                <th scope="col">Input</th>
+                                <th scope="col">Keywords</th>
                                 <th scope="col">Example</th>
                                 <th scope="col">Info</th>
                             </tr>
@@ -65,7 +77,7 @@
                             </tr>
                             <tr>
                                 <td>Launch Spotify</td>
-                                <td>"play <i>song</i> on Spotify"</td>
+                                <td>"on Spotify"</td>
                                 <td>"Play Start Me Up by The Rolling Stones on Spotify."</td>
                                 <td>Will not work albums, artists, or playlists... for now.</td>
                             </tr>
@@ -77,8 +89,8 @@
                             </tr>
                             <tr>
                                 <td>Weather of Location in USA</td>
-                                <td>"weather of <i>city</i>"</td>
-                                <td>"How is the weather in New York City?"</td>
+                                <td>"weather of <i>City</i>"</td>
+                                <td>"weather in New York City?"</td>
                                 <td>Limited to named locations in the USA.</td>
                             </tr>
                             <tr>
@@ -107,7 +119,7 @@
         <div class="modal-content">
             <div class="modal-header">
             <h1 class="modal-title fs-3 label" id="modalLabel">Settings</h1>
-            <button class="btn btn-primary ms-3" data-bs-toggle="modal" data-bs-target="#howTo">User Guide</button>
+            <button class="btn btn-primary ms-3 label" data-bs-toggle="modal" data-bs-target="#howTo">User Guide</button>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body d-flex flex-column">
