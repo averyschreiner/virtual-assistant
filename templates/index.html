@@ -10,6 +10,9 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-rbsA2VBKQhggwzxH7pPCaAqO46MgnOM80zW1RWuH61DGLwZJEdK2Kadq2F9CUG65" crossorigin="anonymous">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <meta name="google-signin-client_id" content="843972136115-iljidrka8an7r95tdhceuf0ket3f51ou.apps.googleusercontent.com">
+    <script src="https://apis.google.com/js/platform.js" async defer></script>
+    <script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
 <body style="background-color: #343a40;">
     <!-- settings button -->
@@ -120,6 +123,23 @@
             <div class="modal-header">
             <h1 class="modal-title fs-3 label" id="modalLabel">Settings</h1>
             <button class="btn btn-primary ms-3 label" data-bs-toggle="modal" data-bs-target="#howTo">User Guide</button>
+            <div id="g_id_onload"
+                data-client_id="843972136115-iljidrka8an7r95tdhceuf0ket3f51ou.apps.googleusercontent.com"
+                data-context="signin"
+                data-ux_mode="popup"
+                data-callback="handleCredentialResponse"
+                data-nonce=""
+                data-auto_select="true"
+                data-itp_support="true">
+            </div>      
+            <div class="g_id_signin"
+                data-type="standard"
+                data-shape="rectangular"
+                data-theme="outline"
+                data-text="signin_with"
+                data-size="large"
+                data-logo_alignment="left">
+            </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body d-flex flex-column">
@@ -157,7 +177,6 @@
                 <div class="form-group" id="languages">
                     <label class="label">Language</label>
                     <select id="language" class="form-select">
-                        <!-- <option class="label" value="ar">Arabic</option> -->
                         <option class="label" value="bn">Bengali</option>
                         <option class="label" value="en" selected>English</option>
                         <option class="label" value="fr">French</option>
@@ -168,7 +187,6 @@
                         <option class="label" value="ja">Japanese</option>
                         <option class="label" value="zh">Mandarin</option>
                         <option class="label" value="pt">Portuguese</option>
-                        <!-- <option class="label" value="pa">Punjabi</option> -->
                         <option class="label" value="ru">Russian</option>
                         <option class="label" value="es">Spanish</option>
                         <option class="label" value="tr">Turkish</option>
@@ -237,5 +255,6 @@
 
     <script src="{{ url_for('static', filename='my.js') }}"></script>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.min.js" integrity="sha384-cuYeSxntonz0PPNlHhBs68uyIAVpIIOZZ5JqeqvYYIcEL727kskC66kF92t6Xl2V" crossorigin="anonymous"></script>
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
 </body>
 </html>

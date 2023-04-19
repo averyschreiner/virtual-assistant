@@ -537,21 +537,45 @@ function revertDefault() {
 
 function pushMessage(message) {
     messages.push(message)
-    while (messages.length >= 10) {
+    while (messages.length >= 16) {
         messages.shift()
         messages.shift()
     }
 }
 
-// show modal on load for user interacting to play audio
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('settings-btn').click()
     navigator.geolocation.getCurrentPosition(geoLocation);
 })
 
 function geoLocation(position) {
     lat = position.coords.latitude
     lng = position.coords.longitude
+}
+
+// chatgpt magic
+function decodeJwtResponse(jwt) {
+    var base64Url = jwt.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+    return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+}).join(''));
+    return JSON.parse(jsonPayload);
+}
+
+function handleCredentialResponse(response) {
+    let responsePayload = decodeJwtResponse(response.credential);
+    let id = responsePayload.sub
+    console.log("ID: " + id);
+
+    fetch('/get_user_info', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({'id': id})
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log(data)
+    })
 }
 
 // constant listening

@@ -1,17 +1,20 @@
 from flask import Flask, render_template, request, Response
-from google.cloud import texttospeech
-from google.cloud import translate_v2 as translate
-import googlemaps
+from google.cloud import translate_v2 as translate, texttospeech
 from spotipy.oauth2 import SpotifyClientCredentials
 from newspaper import Article
 from decouple import config
-import json
-import openai
-import re
-import spotipy
-import requests
+import json, openai, re, spotipy, requests, googlemaps, firebase_admin
+from firebase_admin import credentials, db
 
 app = Flask(__name__)
+app.secret_key = config('SPOTIFY_SECRET')
+app.config['SERVER_NAME'] = 'localhost:5000'
+
+cred = credentials.ApplicationDefault()
+firebase = firebase_admin.initialize_app(cred, {
+    'databaseURL': 'https://virtual-assistant-378601-default-rtdb.firebaseio.com/'
+})
+
 openai.api_key = config('OPENAI_SECRET')
 spotify_secret = config('SPOTIFY_SECRET')
 spotify_client_id = '5dfb1e82a6ce457aab62e55f3f056792'
@@ -154,6 +157,16 @@ def weather():
         details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
 
     return f"{part1} is {details1} And for {part2}, {details2}"
+
+@app.route('/get_user_info', methods=['POST'])
+def get_user_info():
+    data = json.loads(request.data.decode('utf-8'))
+    id = data['id']
+    user_ref = db.reference(f'users/{id}')
+    user_data = user_ref.get()
+    print('\n\nUSER DATA!!!\n\n', user_data, '\n\n')
+
+    return user_data
 
 if __name__ == '__main__':
     app.run(debug=True)
