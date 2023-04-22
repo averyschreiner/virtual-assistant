@@ -15,10 +15,82 @@
     <script src="https://apis.google.com/js/api.js" async defer></script>
 </head>
 <body style="background-color: #343a40;">
-    <!-- settings button -->
-    <button id="settings-btn" type="button" style='background-color: #343a40;' class="btn btn-lg position-fixed top-0 end-0" data-bs-toggle="modal" data-bs-target="#settings">
-        <i class="bi bi-gear" id="settings-icon" style="color: #c8c8c8"></i>
-    </button>
+    <div id="shadedarea" class="position-fixed start-0 top-0 d-flex align-items-center justify-content-center" data-bs-toggle="offcanvas" data-bs-target="#offcanvas" style="color: #c8c8c8">
+        <h3><i class="bi bi-arrow-bar-right"></i></h3>
+    </div>
+
+    <div class="offcanvas offcanvas-start text-bg-dark" tabindex="-1" id="offcanvas">
+        <div class="offcanvas-header">
+            <div id="sign-in" class="d-flex mx-auto text-center fs-3">
+                <div id="g_id_onload"
+                    data-client_id="843972136115-iljidrka8an7r95tdhceuf0ket3f51ou"
+                    data-context="signin"
+                    data-ux_mode="popup"
+                    data-callback="handleCredentialResponse"
+                    data-nonce=""
+                    data-auto_select="true"
+                    data-itp_support="true">
+                </div>
+                <div class="g_id_signin"
+                    data-type="standard"
+                    data-shape="rectangular"
+                    data-theme="outline"
+                    data-text="signin_with"
+                    data-size="large"
+                    data-logo_alignment="left">
+                </div>
+            </div>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="offcanvas" aria-label="Close"></button>
+        </div>
+        <div class="offcanvas-body">
+            <div class="overflow-auto">
+                <div id="menu" class="vstack gap-1">
+                </div>                  
+            </div>
+        </div>
+        <div class="offcanvas-footer">
+            <div class="vstack gap-1">
+                <button class="btn btn-outline-secondary border rounded-pill text-center p-1 mx-auto" style="width:80%;" onclick="newConvo()" data-bs-dismiss="offcanvas">
+                    <svg width="24" height="24" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16" style="color: #c8c8c8">
+                        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
+                    </svg>
+                </button>
+                <div id='footer-buttons' class="d-flex justify-content-evenly my-2">
+                    <!-- delete all previous conversations -->
+                    <button type="button" class="btn btn-lg btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
+                        <i class="bi bi-trash3" style="color: #b50000"></i>
+                    </button>                
+                    <!-- user guide -->
+                    <button type="button" class="btn btn-lg btn-dark btn-outline-primary" data-bs-toggle="modal" data-bs-target="#howTo">
+                        <i class="bi bi-book" style="color: #0048ff"></i>
+                    </button>
+                    <!-- settings button -->
+                    <button id="settings-btn" type="button" class="btn btn-lg btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settings">
+                        <i class="bi bi-gear" id="settings-icon" style="color: #707070"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- confirm delete modal -->
+    <div class="modal fade" id="confirmDeleteModal">
+        <div class="modal-dialog">
+          <div class="modal-content">
+            <div class="modal-header">
+              <h1 class="modal-title fs-5 label" id="exampleModalLabel">Delete All Conversations</h1>
+              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body label">
+                Are you sure? This action cannot be undone.
+            </div>
+            <div class="modal-footer">
+              <button type="button" class="btn btn-danger label" data-bs-dismiss="modal" onclick=delete_all_chats()>Delete All</button>
+              <button type="button" class="btn btn-secondary label" data-bs-dismiss="modal">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
 
     <!-- main container -->
     <div class="d-flex justify-content-center">
@@ -46,70 +118,70 @@
         <div class="modal-xl modal-dialog modal-dialog-centered modal-dialog-scrollable">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h1 class="modal-title fs-3">User Guide</h1> 
+                    <h1 class="modal-title fs-3 label">User Guide</h1> 
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body d-flex flex-column">
                     <table class="table">
                         <thead>
                             <tr>
-                                <th scope="col">Action</th>
-                                <th scope="col">Keywords</th>
-                                <th scope="col">Example</th>
-                                <th scope="col">Info</th>
+                                <th class="label" scope="col">Action</th>
+                                <th class="label" scope="col">Keywords</th>
+                                <th class="label" scope="col">Example</th>
+                                <th class="label" scope="col">Info</th>
                             </tr>
                         </thead>
                         <tbody>
                             <tr>
-                                <td>Type a Question / Instruction</td>
-                                <td>"<i>your question?</i>" or "<i>do something</i>"</td>
-                                <td>"Describe the Earth in 5 words."</td>
-                                <td>You can use the submit button or simply press <kbd>Enter</kbd> to submit your input. Also, you can use <kbd><kbd>Shift</kbd> + <kbd>Enter</kbd></kbd> to return to the next line.</td>
+                                <td class="label" >Type a Question / Instruction</td>
+                                <td class="label" >"<i>your question?</i>" or "<i>do something</i>"</td>
+                                <td class="label" >"Describe the Earth in 5 words."</td>
+                                <td class="label" >You can use the submit button or simply press <kbd>Enter</kbd> to submit your input. Also, you can use <kbd><kbd>Shift</kbd> + <kbd>Enter</kbd></kbd> to return to the next line.</td>
                             </tr>
                             <tr>
-                                <td>Speak a Question / Instruction</td>
-                                <td>Say: "<i>Assistant Name</i>" followed by: "<i>your input</i>"</td>
-                                <td>"Jarvis, can humans eat grass?"</td>
-                                <td>To speak an input, just say the assistant name outloud followed by your question or instruction.</td>
+                                <td class="label" >Speak a Question / Instruction</td>
+                                <td class="label" >Say: "<i>Assistant Name</i>" followed by: "<i>your input</i>"</td>
+                                <td class="label" >"Jarvis, can humans eat grass?"</td>
+                                <td class="label" >To speak an input, just say the assistant name outloud followed by your question or instruction.</td>
                             </tr>
                             <tr>
-                                <td>Daily Report</td>
-                                <td>"good morning" or "gm"</td>
-                                <td>"Good morning!"</td>
-                                <td>A great way to start the day!</td>
+                                <td class="label" >Daily Report</td>
+                                <td class="label" >"good morning" or "gm"</td>
+                                <td class="label" >"Good morning!"</td>
+                                <td class="label" >A great way to start the day!</td>
                             </tr>
                             <tr>
-                                <td>Launch Spotify</td>
-                                <td>"on Spotify"</td>
-                                <td>"Play Start Me Up by The Rolling Stones on Spotify."</td>
-                                <td>Will not work albums, artists, or playlists... for now.</td>
+                                <td class="label" >Launch Spotify</td>
+                                <td class="label" >"on Spotify"</td>
+                                <td class="label" >"Play Start Me Up by The Rolling Stones on Spotify."</td>
+                                <td class="label" >Will not work albums, artists, or playlists... for now.</td>
                             </tr>
                             <tr>
-                                <td>Current Weather</td>
-                                <td>"weather"</td>
-                                <td>"What's the weather like today?"</td>
-                                <td>Limited to users in the USA.</td>
+                                <td class="label" >Current Weather</td>
+                                <td class="label" >"weather"</td>
+                                <td class="label" >"What's the weather like today?"</td>
+                                <td class="label" >Limited to users in the USA.</td>
                             </tr>
                             <tr>
-                                <td>Weather of Location in USA</td>
-                                <td>"weather of <i>City</i>"</td>
-                                <td>"weather in New York City?"</td>
-                                <td>Limited to named locations in the USA.</td>
+                                <td class="label" >Weather of Location in USA</td>
+                                <td class="label" >"weather of <i>City</i>"</td>
+                                <td class="label" >"weather in New York City?"</td>
+                                <td class="label" >Limited to named locations in the USA.</td>
                             </tr>
                             <tr>
-                                <td>Summarize Article</td>
-                                <td>"summarize this: <i>https://linktoarticle.com</i>"</td>
-                                <td>"Can you summarize this article in 1 paragraph? https://www.bbc.com/future/article/20220927-italys-plan-to-save-venice-from-sinking"</td>
-                                <td>Simply paste the link of the article into your input. Ask follow-up questions after the summary! Can only summarize 1 article at a time.</td>
+                                <td class="label" >Summarize Article</td>
+                                <td class="label" >"summarize this: <i>https://linktoarticle.com</i>"</td>
+                                <td class="label" >"Can you summarize this article in 1 paragraph? https://www.bbc.com/future/article/20220927-italys-plan-to-save-venice-from-sinking"</td>
+                                <td class="label" >Simply paste the link of the article into your input. Ask follow-up questions after the summary! Can only summarize 1 article at a time.</td>
                             </tr>
                         </tbody>
                     </table>
-                    <div class="fs-3">Capabilities</div>
+                    <div class="fs-3 label">Capabilities</div>
                     <ul>
-                        <li>Remember messages from earlier in the converstion.</li>
-                        <li>Customizable name and personality.</li>
-                        <li>Can understand and speak 14 different languages.</li>
-                        <li>And much more!</li>
+                        <li class="label" >Remember messages from earlier in the converstion.</li>
+                        <li class="label" >Customizable name and personality.</li>
+                        <li class="label" >Can understand and speak 14 different languages.</li>
+                        <li class="label" >And much more!</li>
                     </ul>
                 </div>
             </div>
@@ -122,24 +194,6 @@
         <div class="modal-content">
             <div class="modal-header">
             <h1 class="modal-title fs-3 label" id="modalLabel">Settings</h1>
-            <button class="btn btn-primary ms-3 label" data-bs-toggle="modal" data-bs-target="#howTo">User Guide</button>
-            <div id="g_id_onload"
-                data-client_id="843972136115-iljidrka8an7r95tdhceuf0ket3f51ou.apps.googleusercontent.com"
-                data-context="signin"
-                data-ux_mode="popup"
-                data-callback="handleCredentialResponse"
-                data-nonce=""
-                data-auto_select="true"
-                data-itp_support="true">
-            </div>      
-            <div class="g_id_signin"
-                data-type="standard"
-                data-shape="rectangular"
-                data-theme="outline"
-                data-text="signin_with"
-                data-size="large"
-                data-logo_alignment="left">
-            </div>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body d-flex flex-column">

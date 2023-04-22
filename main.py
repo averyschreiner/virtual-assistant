@@ -10,7 +10,7 @@ app = Flask(__name__)
 app.secret_key = config('SPOTIFY_SECRET')
 app.config['SERVER_NAME'] = 'localhost:5000'
 
-cred = credentials.ApplicationDefault()
+cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json')
 firebase = firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://virtual-assistant-378601-default-rtdb.firebaseio.com/'
 })
@@ -44,8 +44,8 @@ def home():
 
 @app.route('/chat', methods=['POST'])
 def chat():
-    messages = json.loads(request.data.decode('utf-8'))
     try:
+        messages = json.loads(request.data.decode('utf-8'))
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=messages,
@@ -54,7 +54,7 @@ def chat():
 
         # if a preference or something else silly ask davinci
         if ('s an AI' in gpt_text):
-            question = messages[-1]['content']
+            question = messages[-2]['content']
             try:
                 response = openai.Completion.create(
                     model="text-davinci-003",
@@ -74,99 +74,202 @@ def chat():
 
 @app.route('/speak', methods=['POST'])
 def speak():
-    data = json.loads(request.data.decode('utf-8'))
-    text = data['text']
-    lang = data['lang']
-    male = data['male']
-    language_code = langs[lang][0]
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        text = data['text']
+        lang = data['lang']
+        male = data['male']
+        language_code = langs[lang][0]
 
-    if male:
-        name = langs[lang][1]
-    else:
-        name = langs[lang][2]
+        if male:
+            name = langs[lang][1]
+        else:
+            name = langs[lang][2]
 
-    client = texttospeech.TextToSpeechClient()
-    synthesis_input = texttospeech.SynthesisInput(text=text)
-    voice = texttospeech.VoiceSelectionParams(
-        language_code=language_code,
-        name=name)
-    audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        client = texttospeech.TextToSpeechClient()
+        synthesis_input = texttospeech.SynthesisInput(text=text)
+        voice = texttospeech.VoiceSelectionParams(
+            language_code=language_code,
+            name=name)
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
 
-    response = client.synthesize_speech(
-        input=synthesis_input,
-        voice=voice,
-        audio_config=audio_config
-    )
-    
-    return Response(response.audio_content, mimetype='audio/mp3')
-
+        response = client.synthesize_speech(
+            input=synthesis_input,
+            voice=voice,
+            audio_config=audio_config
+        )
+        
+        return Response(response.audio_content, mimetype='audio/mp3')
+    except: 
+        pass
 
 @app.route('/article', methods=['POST'])
 def article():
-    data = json.loads(request.data.decode('utf-8'))
-    url = data['url']
-    article = Article(url)
-    article.download()
-    article.parse()
-    authors = ', '.join(article.authors)
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        url = data['url']
+        article = Article(url)
+        article.download()
+        article.parse()
+        authors = ', '.join(article.authors)
 
-    return f"Title:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}"
+        return f"Title:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}"
+
+    except:
+        pass
 
 @app.route('/translate', methods=['POST'])
 def switchLang():
-    data = json.loads(request.data.decode('utf-8'))
-    lang = data['lang']
-    text = data['text']
-    client = translate.Client()
-    result = client.translate(text, target_language=lang)
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        lang = data['lang']
+        text = data['text']
+        client = translate.Client()
+        result = client.translate(text, target_language=lang)
 
-    return result['translatedText']
+        return result['translatedText']
+
+    except:
+        pass
 
 @app.route('/spotify_query', methods=['POST'])
 def spotify_query():
-    data = json.loads(request.data.decode('utf-8'))
-    query = data['query']
-    results = sp.search(q=query, type=['track'], limit=1)
-    
-    return str(results['tracks']['items'][0]['uri'])
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        query = data['query']
+        results = sp.search(q=query, type=['track'], limit=1)
+        
+        return str(results['tracks']['items'][0]['uri'])
+    except:
+        pass
 
 @app.route('/weather', methods=['POST'])
 def weather():
-    data = json.loads(request.data.decode('utf-8'))
-    need_cords = data['need_coords']
-    lat = data['lat']
-    lng = data['lng']
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        need_cords = data['need_coords']
+        lat = data['lat']
+        lng = data['lng']
 
-    if need_cords:
-        city = data['city']
-        geocode = gmaps.geocode(city)
-        lat = geocode[0]['geometry']['location']['lat']
-        lng = geocode[0]['geometry']['location']['lng']
-        response = requests.get(f"https://api.weather.gov/points/{lat},{lng}").json()
-        forecast = requests.get(response['properties']['forecast']).json()
-        part1 = forecast['properties']['periods'][0]['name'].lower()
-        details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
-        part2 = forecast['properties']['periods'][1]['name'].lower()
-        details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
-    else:
-        response = requests.get(f"https://api.weather.gov/points/{lat},{lng}").json()
-        forecast = requests.get(response['properties']['forecast']).json()
-        part1 = forecast['properties']['periods'][0]['name'].lower()
-        details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
-        part2 = forecast['properties']['periods'][1]['name'].lower()
-        details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
+        if need_cords:
+            city = data['city']
+            geocode = gmaps.geocode(city)
+            lat = geocode[0]['geometry']['location']['lat']
+            lng = geocode[0]['geometry']['location']['lng']
+            response = requests.get(f"https://api.weather.gov/points/{lat},{lng}").json()
+            forecast = requests.get(response['properties']['forecast']).json()
+            part1 = forecast['properties']['periods'][0]['name'].lower()
+            details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
+            part2 = forecast['properties']['periods'][1]['name'].lower()
+            details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
+        else:
+            response = requests.get(f"https://api.weather.gov/points/{lat},{lng}").json()
+            forecast = requests.get(response['properties']['forecast']).json()
+            part1 = forecast['properties']['periods'][0]['name'].lower()
+            details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
+            part2 = forecast['properties']['periods'][1]['name'].lower()
+            details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
 
-    return f"{part1} is {details1} And for {part2}, {details2}"
+        return f"{part1} is {details1} And for {part2}, {details2}"
+
+    except:
+        pass
 
 @app.route('/get_user_info', methods=['POST'])
 def get_user_info():
-    data = json.loads(request.data.decode('utf-8'))
-    id = data['id']
-    user_ref = db.reference(f'users/{id}')
-    user_data = user_ref.get()
-    print('\n\nUSER DATA!!!\n\n', user_data, '\n\n')
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        user_ref = db.reference(f'users/{id}')
+        user_data = user_ref.get()
 
-    return user_data
+        return user_data
+    except:
+        pass
+
+@app.route('/get_convo', methods=['POST'])
+def get_convo():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        chatNum = data['chatNum']
+        chat_ref = db.reference(f'users/{id}/chats/{chatNum}/messages')
+        chat_data = chat_ref.get()
+
+        return chat_data
+    except:
+        pass
+
+@app.route('/set_messages', methods=['POST'])
+def set_messages():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        chatNum = data['chatNum']
+        messages = data['messages']
+        message_ref = db.reference(f'users/{id}/chats/{chatNum}/messages')
+        db_dict = {index: messages[index] for index in range(len(messages))}
+        message_ref.set(db_dict)
+
+        title_ref = db.reference(f'users/{id}/chats/{chatNum}/title')
+        if title_ref.get() == None:
+            return {'hasTitle': False, 'id': id, 'chatNum': chatNum}
+        else:
+            return {'hasTitle': True}
+    except:
+        pass
+
+@app.route('/create_title', methods=['POST'])
+def create_title():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        chatNum = data['chatNum']
+        message_ref = db.reference(f'users/{id}/chats/{chatNum}/messages')
+        messages = message_ref.get()
+        for m in messages:
+            if m['role'] == 'user':
+                message = m
+                break
+        messages = [message, {'role': 'user', 'content': 'In only 3 or 4 words summarize the previous sentence.'}]
+        response = openai.ChatCompletion.create(
+            model="gpt-3.5-turbo",
+            messages=messages,
+            temperature=0.4)
+        gpt_text = response['choices'][0]['message']['content']
+        title_ref = db.reference(f'users/{id}/chats/{chatNum}')
+        title_ref.update({
+            'title': gpt_text
+        })
+
+        return {'title': gpt_text, 'id': id, 'chatNum': chatNum}
+    except:
+        return {'title': 'Error creating title', 'id': id, 'chatNum': -1}
+    
+@app.route('/delete_all_chats', methods=['POST'])
+def delete_all_chats():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        delete_ref = db.reference(f'users/{id}/chats')
+        delete_ref.delete()
+
+        return 'Delete Sucessful'
+    except:
+        return 'An Error Occurred'
+    
+@app.route('/delete_chat', methods=['POST'])
+def delete_chat():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        chatNum = data['chatNum']
+        chat_ref = db.reference(f'users/{id}/chats/{chatNum}')
+        chat_ref.delete()
+
+        return 'Delete Sucessful'
+    except:
+        return 'An Error Occurred'
 
 if __name__ == '__main__':
     app.run(debug=True)

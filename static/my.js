@@ -32,6 +32,8 @@ let articleText = ''
 let urls = []
 let lang = 'en'
 let textToBeSpoken = ''
+let id = -1
+let chatNum = -1
 
 // recog
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -92,7 +94,7 @@ recognition.addEventListener('result', e => {
     }
 })
 
-// text response from gpt-3.5-turbo
+// handles all responses
 function get_response() {
     hasAttention = false
     finalText = ''
@@ -103,6 +105,7 @@ function get_response() {
     // spotify command
     if (arg.toLowerCase().includes('on spotify')) {
         spotifyResponse()
+        pushMessage({'role': 'user', 'content': arg})
         arg = arg.toLowerCase().replace('on spotify', '')
         arg = arg.slice(arg.lastIndexOf('play') + 4)
         spotify(arg)
@@ -135,7 +138,7 @@ function get_response() {
             if (speakersAllowed) {
                 get_speech(text)
             }
-            pushMessage({'role': 'user', 'content': 'Good morning!'})
+            pushMessage({'role': 'user', 'content': arg})
             pushMessage({'role': 'assistant', 'content': text})
             createResponseMessage(text)
             createResponseMessage('Let me know if there is anything I can help you with! <3')
@@ -192,7 +195,7 @@ function get_response() {
         })
         .then(response => response.text())
         .then(text => {
-            arg = arg.replace(urls[0], '\n\n---\n\n'+text)
+            arg = arg.replace(urls[0], '\n\n---\n\n' + text + '\n\n---\n\n')
             pushMessage({'role': 'user', 'content': arg})
             fetch('/chat', {
                 method: 'POST',
@@ -228,8 +231,8 @@ function get_response() {
     }
     // normal gpt prompt
     else if (arg !== '' && !isInitialPrompt) {
-        afterPrompt()
         pushMessage({'role': 'user', 'content': arg})
+        afterPrompt()
 
         fetch('/chat', {
             method: 'POST',
@@ -258,6 +261,7 @@ function get_response() {
             if (speakersAllowed) {
                 get_speech(textToBeSpoken)
             }
+            set_messages()
         })
         .catch(error => console.error(error))
     }
@@ -266,8 +270,47 @@ function get_response() {
         convo.removeChild(message)
         if (lang == 'en') {
             createResponseMessage('Going idle.')
+            pushMessage({'role': 'assistant', 'content': 'Going idle'})
         }
         isInitialPrompt = true
+    }
+}
+
+// update message record
+function set_messages() {
+    if (id != -1) {
+        fetch('/set_messages', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'id': id, 'chatNum': chatNum, 'messages': sysMessage.concat(messages)})
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (!data.hasTitle) {
+                fetch('/create_title', {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({'id': id, 'chatNum': chatNum})
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (id == data.id) {
+                        convobox = document.createElement('div')
+                        convobox.classList.add('hstack', 'gap-1', 'overflow-hidden')
+                        convobox.style.color = '#c8c8c8"'
+                        convobox.innerHTML = `
+                            <button class="btn btn-outline-secondary rounded text-center overflow-hidden text-nowrap flex-grow-1" onclick=loadConversation(${chatNum}) data-bs-dismiss=offcanvas>${data.title}</button>
+                            <button type="button" class="btn btn-outline-danger" onclick=delete_chat(${data.chatNum});remove_convobox(this);>
+                                <i class="bi bi-trash3" style="color: #b50000"></i>
+                            </button>
+                        `
+                        menu.appendChild(convobox)
+                    }
+                })
+
+            }
+        })
+        
     }
 }
 
@@ -306,7 +349,21 @@ function translateSettings(lang) {
             console.error(error)
         })
     }
+    // translate send message placeholder
+    fetch('/translate', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({'lang': lang, 'text': 'Send a message...'})
+    })
+    .then(response => response.text())
+    .then(text => {
+        textarea.setAttribute('placeholder', text)
+    })
+    .catch(error => {
+        console.error(error)
+    })
 }
+
 
 function spotify(query) {
     fetch('/spotify_query', {
@@ -413,6 +470,7 @@ function acknowledge() {
     else {
         picked = acknowledgements[Math.floor(Math.random() * acknowledgements.length)] + ' ' + addressPref + '?'
     }
+    pushMessage({'role': 'assistant', 'content': picked})
     createResponseMessage(picked)
 }
 
@@ -427,6 +485,7 @@ function afterPrompt() {
     else {
         picked = afterPrompts[Math.floor(Math.random() * afterPrompts.length)] + ' ' + addressPref + '.'
     }
+    pushMessage({'role': 'assistant', 'content': picked})
     createResponseMessage(picked)
 }
 
@@ -436,6 +495,7 @@ function spotifyResponse() {
     let picked = ''
     let spotifyResponses = ["Good pick! I'm on it.", "You have greate taste!", "Solid choice! Playing it now.", "One of my favorites!"]
     picked = spotifyResponses[Math.floor(Math.random() * spotifyResponses.length)]
+    pushMessage({'role': 'assistant', 'content': picked})
     createResponseMessage(picked)
 }
 
@@ -445,6 +505,7 @@ function summaryResponse() {
     let picked = ''
     let summaryResponses = ["Reading up on it now.", "Let me skim this really quick.", "Let me take a look.", "Let's see what we have here."]
     picked = summaryResponses[Math.floor(Math.random() * summaryResponses.length)]
+    pushMessage({'role': 'assistant', 'content': picked})
     createResponseMessage(picked)
 }
 
@@ -454,6 +515,7 @@ function weatherResponse() {
     let picked = ''
     let weatherResponses = ['Let me check the forecast briefly.', "Let me read the forecast for the next few hours."]
     picked = weatherResponses[Math.floor(Math.random() * weatherResponses.length)]
+    pushMessage({'role': 'assistant', 'content': picked})
     createResponseMessage(picked)
 }
 
@@ -537,7 +599,7 @@ function revertDefault() {
 
 function pushMessage(message) {
     messages.push(message)
-    while (messages.length >= 16) {
+    while (messages.length >= 30) {
         messages.shift()
         messages.shift()
     }
@@ -545,13 +607,14 @@ function pushMessage(message) {
 
 document.addEventListener('DOMContentLoaded', function() {
     navigator.geolocation.getCurrentPosition(geoLocation);
+    newConvo()
 })
 
 function geoLocation(position) {
     lat = position.coords.latitude
     lng = position.coords.longitude
 }
-
+menu
 // chatgpt magic
 function decodeJwtResponse(jwt) {
     var base64Url = jwt.split('.')[1];
@@ -562,11 +625,14 @@ function decodeJwtResponse(jwt) {
     return JSON.parse(jsonPayload);
 }
 
+signin = document.getElementById('sign-in')
+menu = document.getElementById('menu')
+footer_buttons = document.getElementById('footer-buttons')
 function handleCredentialResponse(response) {
     let responsePayload = decodeJwtResponse(response.credential);
-    let id = responsePayload.sub
-    console.log("ID: " + id);
-
+    id = responsePayload.sub
+    signin.innerHTML = responsePayload.name 
+    footer_buttons.innerHTML += "<button type='button' class='btn btn-lg btn-outline-secondary' onclick=signOut()><i class='bi bi-box-arrow-right'></i></button>"
     fetch('/get_user_info', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -574,8 +640,86 @@ function handleCredentialResponse(response) {
     })
     .then(response => response.json())
     .then(data => {
-        console.log(data)
+        // load chats
+        let chats = data.chats
+        for (let chat in chats) {
+            convobox = document.createElement('div')
+            convobox.classList.add('hstack', 'gap-1', 'overflow-hidden')
+            convobox.style.color = '#c8c8c8"'
+            convobox.innerHTML = `
+                <button class="btn btn-outline-secondary rounded text-center overflow-hidden text-nowrap flex-grow-1" onclick=loadConversation(${chat}) data-bs-dismiss=offcanvas>${chats[chat].title}</button>
+                <button type="button" class="btn btn-outline-danger" onclick=delete_chat(${chat});remove_convobox(this);>
+                    <i class="bi bi-trash3" style="color: #b50000"></i>
+                </button>
+            `
+            menu.appendChild(convobox)
+        }
     })
+}
+
+function loadConversation(convoID) {
+    // clear main conversations
+    chatNum = convoID
+    convo.innerHTML = ''
+    messages = []
+    fetch('/get_convo', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({'id': id, 'chatNum': convoID})
+    })
+    .then(response => response.json())
+    .then(data => {
+        for (let i of data) {
+            if (i != null) {
+                if (i.role == 'user') {
+                    pushMessage({'role': 'user', 'content': i.content})
+                    createInputMessage(i.content)
+                }
+                else if (i.role == 'assistant') {
+                    pushMessage({'role': 'assistant', 'content': i.content})
+                    createResponseMessage(i.content)
+                }
+            }
+        }
+    })
+}
+
+function delete_all_chats() {
+    if (id != -1) {
+        menu.innerHTML = ''
+        fetch('/delete_all_chats', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'id': id})
+        })
+        .then(response => response.text())
+        .then(text => {
+            alert(text)
+        })
+    }
+}
+
+function delete_chat(chatNumb) {
+    if (id != -1) {
+        if (chatNumb == chatNum) {
+            newConvo()
+        }
+        fetch('/delete_chat', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'id': id, 'chatNum': chatNumb})
+        })
+    }
+}
+
+function remove_convobox(button) {
+    button.parentNode.remove()
+}
+
+function newConvo() {
+    chatNum = Math.floor(Date.now() / 1000)
+    convo.innerHTML = ''
+    messages = []
 }
 
 // constant listening
@@ -607,3 +751,29 @@ submitButton.addEventListener('click', function() {
     }
     textarea.value = ''
 })
+
+function signOut() {
+    // clear / reset everything and reload
+    convo.innerHTML = ''
+    menu.innerHTML = ''
+    signin.innerHTML = `
+    <div id="g_id_onload"
+        data-client_id="843972136115-iljidrka8an7r95tdhceuf0ket3f51ou"
+        data-context="signin"
+        data-ux_mode="popup"
+        data-callback="handleCredentialResponse"
+        data-nonce=""
+        data-auto_select="true"
+        data-itp_support="true">
+    </div>
+    <div class="g_id_signin"
+        data-type="standard"
+        data-shape="rectangular"
+        data-theme="outline"
+        data-text="signin_with"
+        data-size="large"
+        data-logo_alignment="left">
+    </div>
+    `
+    location.reload()
+}

@@ -17,3 +17,12 @@
     height: 40px;
     background-color: #c8c8c8;   
 }
+
+#shadedarea {
+  width: 5%;
+  height: 100%;
+}
+
+#shadedarea:hover {
+  background: linear-gradient(to right, rgba(0,0,0,.4), rgba(0,0,0,0));
+}
