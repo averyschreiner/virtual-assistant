@@ -5,7 +5,6 @@ let hasAttention = false
 let micAllowed = false
 let speakersAllowed = false
 let spotifyDesktop = false
-let iconColor = '#c8c8c8'
 let responseBubbleColor = '#6c757d'
 let responseTextColor = '#ffffff'
 let myBubbleColor = '#0d6efd'
@@ -34,6 +33,7 @@ let lang = 'en'
 let textToBeSpoken = ''
 let id = -1
 let chatNum = -1
+let editConvoTitleNum = -1
 
 // recog
 window.SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition
@@ -543,8 +543,8 @@ function updateSettings() {
         recognition.lang = lang
     }
     male = document.getElementById('gender').value == 'male'
-    if (document.getElementById("ma'am").checked) {
-        addressPref = "ma'am"
+    if (document.getElementById("madam").checked) {
+        addressPref = "madam"
     }
     else if (document.getElementById("sir").checked) {
         addressPref = 'sir'
@@ -559,7 +559,6 @@ function updateSettings() {
     myBubbleColor = document.getElementById('myBubble').value
     myTextColor = document.getElementById('myText').value
     bgColor = document.getElementById('bgColor').value
-    iconColor = document.getElementById('settings-icon').style.color
     responseBubbles = document.getElementsByClassName('response')
     myBubbles = document.getElementsByClassName('myInput')
 
@@ -587,6 +586,31 @@ function updateSettings() {
         bubble.style.color = myTextColor
     })
     document.body.style.backgroundColor = bgColor
+
+    if (id != -1) {
+        fetch('/save_settings', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({'id': id,
+                                'mic': micAllowed,
+                                'sound': speakersAllowed,
+                                'spotify_desktop': spotifyDesktop,
+                                'assistant_name': assistantName,
+                                'assistant_personality': personality,
+                                'lang': lang,
+                                'voice_gender_male': male,
+                                'manners': addressPref,
+                                'rm_color': responseBubbleColor,
+                                'rt_color': responseTextColor,
+                                'mm_color': myBubbleColor,
+                                'mt_color': myTextColor,
+                                'bg_color': bgColor})
+        })
+        .then(response => response.text())
+        .then(text => {
+            alert(text)
+        })
+    }
 }
 
 function revertDefault() {
@@ -601,7 +625,6 @@ function pushMessage(message) {
     messages.push(message)
     while (messages.length >= 30) {
         messages.shift()
-        messages.shift()
     }
 }
 
@@ -614,7 +637,7 @@ function geoLocation(position) {
     lat = position.coords.latitude
     lng = position.coords.longitude
 }
-menu
+
 // chatgpt magic
 function decodeJwtResponse(jwt) {
     var base64Url = jwt.split('.')[1];
@@ -640,7 +663,180 @@ function handleCredentialResponse(response) {
     })
     .then(response => response.json())
     .then(data => {
+        // users settings
+        settingsModal.innerHTML = `
+        <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+            <h1 class="modal-title fs-3 label" id="modalLabel">Settings</h1>
+            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body d-flex flex-column">
+                <div class="fs-5 label">Access</div>
+                <hr>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="allowMic" ${data.settings.mic ? 'checked' : ''}>
+                    <label class="form-check-label label" for="flexSwitchCheckDefault">Microphone</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="allowSpeakers" ${data.settings.sound ? 'checked' : ''}>
+                    <label class="form-check-label label" for="flexSwitchCheckDefault">Sound</label>
+                </div>
+                <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" role="switch" id="spotifyDesktop" ${data.settings.spotify_desktop ? 'checked' : ''}>
+                    <label class="form-check-label label" for="flexSwitchCheckDefault">Spotify Desktop</label>
+                </div>
+                <hr>
+                <div class="fs-5 label">Preferences</div>
+                <hr>
+                <div class="form-group" id="names">
+                    <label class="label">Assistant Name</label>
+                    <input type="text" class="form-control" id="name" name="name" value="${data.settings.assistant_name}">
+                </div>
+                <div class="form-group" id="roles">
+                    <label class="label">Assistant Personality</label>
+                    <select id="role" class="form-select">
+                        <option class="label" value="general" ${data.settings.assistant_personality == 'general' ? 'selected' : ''}>Well-Rounded</option>
+                        <option class="label" value="coder" ${data.settings.assistant_personality == 'coder' ? 'selected' : ''}>Software Developer</option>
+                        <option class="label" value="poet" ${data.settings.assistant_personality == 'poet' ? 'selected' : ''}>Poet</option>
+                        <option class="label" value="brief" ${data.settings.assistant_personality == 'brief' ? 'selected' : ''}>Short 'n Sweet</option>
+                        <option class="label" value="elaborator" ${data.settings.assistant_personality == 'elaborator' ? 'selected' : ''}>Elaborator</option>
+                    </select>
+                </div>
+                <div class="form-group" id="languages">
+                    <label class="label">Language</label>
+                    <select id="language" class="form-select">
+                        <option class="label" value="bn" ${data.settings.lang == 'bn' ? 'selected' : ''}>Bengali</option>
+                        <option class="label" value="en" ${data.settings.lang == 'en' ? 'selected' : ''}>English</option>
+                        <option class="label" value="fr" ${data.settings.lang == 'fr' ? 'selected' : ''}>French</option>
+                        <option class="label" value="de" ${data.settings.lang == 'de' ? 'selected' : ''}>German</option>
+                        <option class="label" value="hi" ${data.settings.lang == 'hi' ? 'selected' : ''}>Hindi</option>
+                        <option class="label" value="id" ${data.settings.lang == 'id' ? 'selected' : ''}>Indonesian</option>
+                        <option class="label" value="it" ${data.settings.lang == 'it' ? 'selected' : ''}>Italian</option>
+                        <option class="label" value="ja" ${data.settings.lang == 'ja' ? 'selected' : ''}>Japanese</option>
+                        <option class="label" value="zh" ${data.settings.lang == 'zh' ? 'selected' : ''}>Mandarin</option>
+                        <option class="label" value="pt" ${data.settings.lang == 'pt' ? 'selected' : ''}>Portuguese</option>
+                        <option class="label" value="ru" ${data.settings.lang == 'ru' ? 'selected' : ''}>Russian</option>
+                        <option class="label" value="es" ${data.settings.lang == 'es' ? 'selected' : ''}>Spanish</option>
+                        <option class="label" value="tr" ${data.settings.lang == 'tr' ? 'selected' : ''}>Turkish</option>
+                        <option class="label" value="vi" ${data.settings.lang == 'vi' ? 'selected' : ''}>Vietnamese</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label class="label">Voice Gender</label>
+                    <select id="gender" class="form-select">
+                        <option class="label" value="female" ${data.settings.voice_gender_male ? '' : 'selected'}>Female</option>
+                        <option class="label" value="male" ${data.settings.voice_gender_male ? 'selected' : ''}>Male</option>
+                    </select>
+                </div>
+                <br>
+                <label class="label">Manners</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="madam" ${data.settings.manners == 'madam' ? 'checked' : ''}>
+                    <label class="form-check-label label" for="flexRadioDefault1">
+                        Madam
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="sir" ${data.settings.manners == 'sir' ? 'checked' : ''}>
+                    <label class="form-check-label label" for="flexRadioDefault2">
+                        Sir
+                    </label>
+                  </div>
+                  <div class="form-check">
+                    <input class="form-check-input" type="radio" name="flexRadioDefault" id="noPref" ${data.settings.manners == '' ? 'checked' : ''}>
+                    <label class="form-check-label label" for="flexRadioDefault2">
+                        None
+                    </label>
+                  </div>
+                <hr>
+                <div class="fs-5 label">Colors</div>
+                <hr>
+                <div class="form-check form-check-inline m-3">
+                    <input class="form-control-color" type="color" id="responseBubble" value="${data.settings.rm_color}" title="Choose a color">
+                    <label class="form-label align-bottom label">Response Messages</label>
+                </div>
+                <div class="form-check form-check-inline m-3">
+                    <input class="form-control-color" type="color" id="responseText" value="${data.settings.rt_color}" title="Choose a color">
+                    <label class="form-label align-bottom label">Response Text</label>
+                </div>
+                <div class="form-check form-check-inline m-3">
+                    <input class="form-control-color" type="color" id="myBubble" value="${data.settings.mm_color}" title="Choose a color">
+                    <label class="form-label align-bottom label">My Messages</label>
+                </div>
+                <div class="form-check form-check-inline m-3">
+                    <input class="form-control-color" type="color" id="myText" value="${data.settings.mt_color}" title="Choose a color">
+                    <label class="form-label align-bottom label">My Text</label>
+                </div>
+                <div class="form-check form-check-inline m-3">
+                    <input class="form-control-color" type="color" id="bgColor" value="${data.settings.bg_color}" title="Choose a color">
+                    <label class="form-label align-bottom label">Background</label>
+                </div>
+                <button type="button" class="btn btn-primary m-3 label" onclick="revertDefault()">Default Colors</button>
+            </div>
+            <div class="modal-footer">
+            <button type="button" class="btn btn-secondary label" data-bs-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary label" data-bs-dismiss="modal" onclick="updateSettings()">Save changes</button>
+            </div>
+        </div>
+        </div>
+        `
+
+        // access
+        micAllowed = data.settings.mic
+        speakersAllowed = data.settings.sound
+        spotifyDesktop = data.settings.spotify_desktop
+
+        // preferences
+        assistantName = data.settings.assistant_name
+        document.title = assistantName
+        personality = data.settings.assistant_personality
+        sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles[personality]}`}]
+        lang = data.settings.lang
+        if (lang != recognition.lang) {
+            translateSettings(lang)
+            recognition.lang = lang
+        }
+        male = data.settings.voice_gender_male
+        addressPref = data.settings.manners
+
+        // colors
+        responseBubbleColor = data.settings.rm_color
+        responseTextColor = data.settings.rt_color
+        myBubbleColor = data.settings.mm_color
+        myTextColor = data.settings.mt_color
+        bgColor = data.settings.bg_color
+        document.body.style.backgroundColor = bgColor
+
+        responseBubbles = document.getElementsByClassName('response')
+        myBubbles = document.getElementsByClassName('myInput')
+        // response messages
+        Array.from(responseBubbles).forEach(bubble => {
+            bubble.style.backgroundColor = responseBubbleColor
+            bubble.style.color = responseTextColor
+        })
+        // our messages
+        Array.from(myBubbles).forEach(bubble => {
+            bubble.style.backgroundColor = myBubbleColor
+            bubble.style.color = myTextColor
+        })
+
+        // mic access
+        if (micAllowed) {
+            try {
+                recognition.start()
+            }
+            catch (error) {
+            }
+        }
+        else {
+            recognition.stop()
+        }
+
         // load chats
+        // <button type="button" class="btn btn-outline-secondar" onclick="editTitleTA.innerText=${chats[chat].title};editConvoTitleNum=${chat};" data-bs-toggle="modal" data-bs-target="#editTitleModal">
+        //             <i class="bi bi-pencil-square"></i>
+        //         </button>
         let chats = data.chats
         for (let chat in chats) {
             convobox = document.createElement('div')
@@ -655,6 +851,11 @@ function handleCredentialResponse(response) {
             menu.appendChild(convobox)
         }
     })
+}
+
+editTitleTA = document.getElementById('editTitleTA')
+function edit_title(convo_title) {
+    editTitleTA.innerText = convo_title
 }
 
 function loadConversation(convoID) {
@@ -677,7 +878,19 @@ function loadConversation(convoID) {
                 }
                 else if (i.role == 'assistant') {
                     pushMessage({'role': 'assistant', 'content': i.content})
-                    createResponseMessage(i.content)
+                    responses = i.content.split('```')
+
+                    for (let i = 0; i < responses.length; i++) {
+                        let chunkOText = responses[i].trim()
+                        if (i % 2 == 0) {
+                            if (chunkOText != '') {
+                                createResponseMessage(chunkOText)
+                            }
+                        }
+                        else {
+                            createCodeBlock(chunkOText)
+                        }
+                    }
                 }
             }
         }
@@ -710,6 +923,15 @@ function delete_chat(chatNumb) {
             body: JSON.stringify({'id': id, 'chatNum': chatNumb})
         })
     }
+}
+
+function set_title() {
+    fetch('/set_title', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({'id': id, 'chatNum': editConvoTitleNum, 'title': document.getElementById('editTitleTA').value})
+    })
+
 }
 
 function remove_convobox(button) {

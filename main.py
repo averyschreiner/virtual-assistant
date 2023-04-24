@@ -8,7 +8,7 @@ from firebase_admin import credentials, db
 
 app = Flask(__name__)
 app.secret_key = config('SPOTIFY_SECRET')
-app.config['SERVER_NAME'] = 'localhost:5000'
+# app.config['SERVER_NAME'] = 'localhost:5000'
 
 cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json')
 firebase = firebase_admin.initialize_app(cred, {
@@ -268,6 +268,32 @@ def delete_chat():
         chat_ref.delete()
 
         return 'Delete Sucessful'
+    except:
+        return 'An Error Occurred'
+    
+@app.route('/save_settings', methods=['POST'])
+def save_settings():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        settings_ref = db.reference(f'users/{id}/settings')
+        settings_ref.update({
+            'mic': data['mic'],
+            'sound': data['sound'],
+            'spotify_desktop': data['spotify_desktop'],
+            'assistant_name': data['assistant_name'],
+            'assistant_personality': data['assistant_personality'],
+            'lang': data['lang'],
+            'voice_gender_male': data['voice_gender_male'],
+            'manners': data['manners'],
+            'rm_color': data['rm_color'],
+            'rt_color': data['rt_color'],
+            'mm_color': data['mm_color'],
+            'mt_color': data['mt_color'],
+            'bg_color': data['bg_color']
+        })
+
+        return 'Save Sucessful'
     except:
         return 'An Error Occurred'
 
