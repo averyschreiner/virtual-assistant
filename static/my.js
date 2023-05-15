@@ -299,8 +299,6 @@ function set_messages() {
                         convobox.style.color = '#c8c8c8"'
                         titleText = data.title
                         newtitleText = titleText.replace(/^["'](.+(?=["']$))["']$/, '$1')
-                        console.log('old: '+titleText)
-                        console.log('new: ' + newtitleText)
                         titleText = newtitleText
                         convobox.innerHTML = `
                             <button class="btn btn-outline-secondary rounded text-center overflow-hidden text-nowrap flex-grow-1" onclick=loadConversation(${data.chatNum}) data-bs-dismiss=offcanvas>${titleText}</button>
