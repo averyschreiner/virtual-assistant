@@ -50,23 +50,21 @@
         </div>
         <div class="offcanvas-footer">
             <div class="vstack gap-1">
-                <button class="btn btn-outline-secondary border rounded-pill text-center p-1 mx-auto" style="width:80%;" onclick="newConvo()" data-bs-dismiss="offcanvas">
-                    <svg width="24" height="24" fill="currentColor" class="bi bi-plus-lg" viewBox="0 0 16 16" style="color: #c8c8c8">
-                        <path fill-rule="evenodd" d="M8 2a.5.5 0 0 1 .5.5v5h5a.5.5 0 0 1 0 1h-5v5a.5.5 0 0 1-1 0v-5h-5a.5.5 0 0 1 0-1h5v-5A.5.5 0 0 1 8 2Z"/>
-                    </svg>
+                <button class="btn btn-outline-secondary rounded-pill text-center p-1 mx-auto mt-2" style="width:80%;" onclick="newConvo()" data-bs-dismiss="offcanvas">
+                    <i class="bi bi-plus-lg"></i>
                 </button>
                 <div id='footer-buttons' class="d-flex justify-content-evenly my-2">
                     <!-- delete all previous conversations -->
                     <button type="button" class="btn btn-lg btn-outline-danger" data-bs-toggle="modal" data-bs-target="#confirmDeleteModal">
-                        <i class="bi bi-trash3" style="color: #b50000"></i>
+                        <i class="bi bi-trash3"></i>
                     </button>                
                     <!-- user guide -->
                     <button type="button" class="btn btn-lg btn-dark btn-outline-primary" data-bs-toggle="modal" data-bs-target="#howTo">
-                        <i class="bi bi-book" style="color: #0048ff"></i>
+                        <i class="bi bi-book"></i>
                     </button>
                     <!-- settings button -->
                     <button id="settings-btn" type="button" class="btn btn-lg btn-outline-secondary" data-bs-toggle="modal" data-bs-target="#settings">
-                        <i class="bi bi-gear" id="settings-icon" style="color: #707070"></i>
+                        <i class="bi bi-gear"></i>
                     </button>
                 </div>
             </div>
@@ -82,11 +80,11 @@
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body label">
-                <textarea id="editTitleTA"></textarea>
+                <div id="editTitleTextBox" contenteditable></div>
             </div>
             <div class="modal-footer">
               <button type="button" class="btn btn-success label" data-bs-dismiss="modal" onclick=set_title()>Save</button>
-              <button type="button" class="btn btn-secondary label" data-bs-dismiss="modal">Cancel</button>
+              <button type="button" class="btn btn-danger label" data-bs-dismiss="modal">Cancel</button>
             </div>
           </div>
         </div>
@@ -319,7 +317,7 @@
                 <button type="button" class="btn btn-primary m-3 label" onclick="revertDefault()">Default Colors</button>
             </div>
             <div class="modal-footer">
-            <button type="button" class="btn btn-secondary label" data-bs-dismiss="modal">Close</button>
+            <button id="closeSettings" type="button" class="btn btn-secondary label" data-bs-dismiss="modal">Close</button>
             <button type="button" class="btn btn-primary label" data-bs-dismiss="modal" onclick="updateSettings()">Save changes</button>
             </div>
         </div>

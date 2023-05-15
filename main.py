@@ -61,9 +61,8 @@ def chat():
                     prompt= question,
                     temperature=0.8,
                     max_tokens=2048)
-            
-                return response['choices'][0]['text']
-            
+                response_text = response['choices'][0]['text']
+                return response_text
             except:
                 return 'An error occurred, please refresh the page.'
         else:
@@ -195,7 +194,6 @@ def get_convo():
         chatNum = data['chatNum']
         chat_ref = db.reference(f'users/{id}/chats/{chatNum}/messages')
         chat_data = chat_ref.get()
-
         return chat_data
     except:
         pass
@@ -219,6 +217,21 @@ def set_messages():
     except:
         pass
 
+@app.route('/set_title', methods=['POST'])
+def set_title():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        id = data['id']
+        chatNum = data['chatNum']
+        title = data['title']
+        title_ref = db.reference(f'users/{id}/chats/{chatNum}')
+        title_ref.update({
+            'title': title
+        })
+        return 'All Good'
+    except:
+        return 'An Error Occurred'
+
 @app.route('/create_title', methods=['POST'])
 def create_title():
     try:
@@ -231,7 +244,7 @@ def create_title():
             if m['role'] == 'user':
                 message = m
                 break
-        messages = [message, {'role': 'user', 'content': 'In only 3 or 4 words summarize the previous sentence.'}]
+        messages = [{'role': 'user', 'content': 'Create a short title, 2 or 3 words, for a conversation that starts with: ' + message['content']}]
         response = openai.ChatCompletion.create(
             model="gpt-3.5-turbo",
             messages=messages,

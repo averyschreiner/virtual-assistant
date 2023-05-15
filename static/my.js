@@ -48,7 +48,6 @@ recognition.addEventListener('result', e => {
             .map(result => result[0])
             .map(result => result.transcript)
             .join('')
-
         // only take input after name/nickname has been called
         if (transcript.includes(assistantName)) {
             hasAttention = true
@@ -298,8 +297,16 @@ function set_messages() {
                         convobox = document.createElement('div')
                         convobox.classList.add('hstack', 'gap-1', 'overflow-hidden')
                         convobox.style.color = '#c8c8c8"'
+                        titleText = data.title
+                        newtitleText = titleText.replace(/^["'](.+(?=["']$))["']$/, '$1')
+                        console.log('old: '+titleText)
+                        console.log('new: ' + newtitleText)
+                        titleText = newtitleText
                         convobox.innerHTML = `
-                            <button class="btn btn-outline-secondary rounded text-center overflow-hidden text-nowrap flex-grow-1" onclick=loadConversation(${chatNum}) data-bs-dismiss=offcanvas>${data.title}</button>
+                            <button class="btn btn-outline-secondary rounded text-center overflow-hidden text-nowrap flex-grow-1" onclick=loadConversation(${data.chatNum}) data-bs-dismiss=offcanvas>${titleText}</button>
+                            <button type="button" class="btn btn-outline-primary" data-chatnum=${data.chatNum} onclick="handleEdit(this)" data-bs-toggle="modal" data-bs-target="#editTitleModal">
+                                <i class="bi bi-pencil-square"></i>
+                            </button>
                             <button type="button" class="btn btn-outline-danger" onclick=delete_chat(${data.chatNum});remove_convobox(this);>
                                 <i class="bi bi-trash3" style="color: #b50000"></i>
                             </button>
@@ -390,7 +397,7 @@ function createInputMessage(text) {
 
     // p element
     bubble = document.createElement('pre')
-    bubble.classList.add('card', 'fs-4', 'p-3', 'rounded-4', 'text-wrap', 'myInput')
+    bubble.classList.add('card', 'fs-5', 'p-3', 'rounded-4', 'text-wrap', 'myInput')
     bubble.textContent = text
     bubble.style.maxWidth = '70%'
     bubble.style.backgroundColor = myBubbleColor
@@ -409,7 +416,7 @@ function createResponseMessage(text) {
 
     // p element
     bubble = document.createElement('pre')
-    bubble.classList.add('card', 'fs-4', 'p-3', 'rounded-4', 'text-wrap', 'response')
+    bubble.classList.add('card', 'fs-5', 'p-3', 'rounded-4', 'text-wrap', 'response')
     bubble.textContent = text
     bubble.style.maxWidth = '70%'
     bubble.style.backgroundColor = responseBubbleColor
@@ -427,7 +434,7 @@ function createCodeBlock(text) {
 
     // p element
     bubble = document.createElement('div')
-    bubble.classList.add('card', 'fs-4', 'p-3', 'rounded-4', 'text-wrap', 'response')
+    bubble.classList.add('card', 'fs-5', 'p-3', 'rounded-4', 'text-wrap', 'response')
     bubble.style.width = '70%'
     bubble.style.backgroundColor = responseBubbleColor
     bubble.style.color = responseTextColor
@@ -833,10 +840,11 @@ function handleCredentialResponse(response) {
             recognition.stop()
         }
 
+        // fix for no speech recog on sign in, IDEK
+        // document.getElementById('settings-btn').click()
+        // document.getElementById('closeSettings').click()
+
         // load chats
-        // <button type="button" class="btn btn-outline-secondar" onclick="editTitleTA.innerText=${chats[chat].title};editConvoTitleNum=${chat};" data-bs-toggle="modal" data-bs-target="#editTitleModal">
-        //             <i class="bi bi-pencil-square"></i>
-        //         </button>
         let chats = data.chats
         for (let chat in chats) {
             convobox = document.createElement('div')
@@ -844,8 +852,11 @@ function handleCredentialResponse(response) {
             convobox.style.color = '#c8c8c8"'
             convobox.innerHTML = `
                 <button class="btn btn-outline-secondary rounded text-center overflow-hidden text-nowrap flex-grow-1" onclick=loadConversation(${chat}) data-bs-dismiss=offcanvas>${chats[chat].title}</button>
+                <button type="button" class="btn btn-outline-primary" data-chatnum=${chat} onclick="handleEdit(this)" data-bs-toggle="modal" data-bs-target="#editTitleModal">
+                    <i class="bi bi-pencil-square"></i>
+                </button>
                 <button type="button" class="btn btn-outline-danger" onclick=delete_chat(${chat});remove_convobox(this);>
-                    <i class="bi bi-trash3" style="color: #b50000"></i>
+                    <i class="bi bi-trash3"></i>
                 </button>
             `
             menu.appendChild(convobox)
@@ -853,9 +864,13 @@ function handleCredentialResponse(response) {
     })
 }
 
-editTitleTA = document.getElementById('editTitleTA')
-function edit_title(convo_title) {
-    editTitleTA.innerText = convo_title
+let editTitleTextBox = document.getElementById('editTitleTextBox')
+let editTitleChatNum = -1
+let lastEditButton = 'ope'
+function handleEdit(button) {
+    editTitleTextBox.textContent = button.previousSibling.previousSibling.textContent
+    editTitleChatNum = button.getAttribute('data-chatnum')
+    lastEditButton = button
 }
 
 function loadConversation(convoID) {
@@ -879,7 +894,6 @@ function loadConversation(convoID) {
                 else if (i.role == 'assistant') {
                     pushMessage({'role': 'assistant', 'content': i.content})
                     responses = i.content.split('```')
-
                     for (let i = 0; i < responses.length; i++) {
                         let chunkOText = responses[i].trim()
                         if (i % 2 == 0) {
@@ -929,9 +943,15 @@ function set_title() {
     fetch('/set_title', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({'id': id, 'chatNum': editConvoTitleNum, 'title': document.getElementById('editTitleTA').value})
+        body: JSON.stringify({'id': id, 'chatNum': editTitleChatNum, 'title': editTitleTextBox.textContent})
     })
-
+    .then(response => response.text())
+    .then(text => {
+        if (text != 'All Good') {
+            alert(text)
+        }
+    })
+    lastEditButton.previousSibling.previousSibling.textContent = editTitleTextBox.textContent
 }
 
 function remove_convobox(button) {
