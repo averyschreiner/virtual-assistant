@@ -3,7 +3,7 @@ from google.cloud import translate_v2 as translate, texttospeech
 from spotipy.oauth2 import SpotifyClientCredentials
 from newspaper import Article
 from decouple import config
-import json, openai, re, spotipy, requests, googlemaps, firebase_admin
+import json, openai, re, spotipy, requests, googlemaps, firebase_admin, tiktoken
 from firebase_admin import credentials, db
 
 app = Flask(__name__)
@@ -42,15 +42,37 @@ langs = {'ar': ['ar-XA', 'ar-XA-Standard-C', 'ar-XA-Standard-D'],
 def home():
     return render_template('index.html')
 
+def check_tokens(messages):
+    encoding = tiktoken.encoding_for_model("gpt-4")
+    max_tokens = 8192
+    num_tokens = 0
+    for message in messages:
+        num_tokens += 4
+        for k, v in message.items():
+            num_tokens += len(encoding.encode(v))
+            if k == "name":
+                num_tokens -= 1
+    num_tokens += 2
+
+    # if we are over our token limit or the earliest message is from the assistant, pop and retry
+    if num_tokens > max_tokens or messages[1]['role'] == 'assistant':
+        messages.pop(1)
+        check_tokens(messages)
+
+    return messages
+    
+
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         messages = json.loads(request.data.decode('utf-8'))
+        messages = check_tokens(messages)
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages,
             temperature=0.4)
         gpt_text = response['choices'][0]['message']['content']
+        gpt_text = re.sub("\n```|```\n", "```", gpt_text)
 
         # if a preference or something else silly ask davinci
         if ('s an AI' in gpt_text):
@@ -62,11 +84,13 @@ def chat():
                     temperature=0.8,
                     max_tokens=2048)
                 response_text = response['choices'][0]['text']
-                return response_text
+                messages.append({'role': 'assistant', 'content': response_text})
+                return {'messages': messages}
             except:
                 return 'An error occurred, please refresh the page.'
         else:
-            return re.sub("\n```|```\n", "```", gpt_text)
+            messages.append({'role': 'assistant', 'content': gpt_text})
+            return {'messages': messages}
         
     except:
         return 'An error occurred, please refresh the page.'
@@ -246,10 +270,10 @@ def create_title():
                 break
         messages = [{'role': 'user', 'content': 'Create a short title, 2 or 3 words, for a conversation that starts with: ' + message['content']}]
         response = openai.ChatCompletion.create(
-            model="gpt-3.5-turbo",
+            model="gpt-4",
             messages=messages,
             temperature=0.4)
-        gpt_text = response['choices'][0]['message']['content']
+        gpt_text = response['choices'][0]['message']['content'].strip('"')
         title_ref = db.reference(f'users/{id}/chats/{chatNum}')
         title_ref.update({
             'title': gpt_text

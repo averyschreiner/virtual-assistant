@@ -201,10 +201,10 @@ function get_response() {
                 headers: {'Content-Type': 'application/json'},
                 body: JSON.stringify(sysMessage.concat(messages))
             })
-            .then(response => response.text())
+            .then(response => response.json())
             .then(result => {
-                pushMessage({'role': 'assistant', 'content': result})
-                responses = result.split('```')
+                messages = result.messages.slice(1)
+                responses = messages[messages.length - 1]['content'].split('```')
 
                 for (let i = 0; i < responses.length; i++) {
                     let chunkOText = responses[i]
@@ -238,10 +238,10 @@ function get_response() {
             headers: {'Content-Type': 'application/json'},
             body: JSON.stringify(sysMessage.concat(messages))
         })
-        .then(response => response.text())
+        .then(response => response.json())
         .then(result => {
-            pushMessage({'role': 'assistant', 'content': result})
-            responses = result.split('```')
+            messages = result.messages.slice(1)
+            responses = messages[messages.length - 1]['content'].split('```')
 
             for (let i = 0; i < responses.length; i++) {
                 let chunkOText = responses[i].trim()
@@ -628,9 +628,6 @@ function revertDefault() {
 
 function pushMessage(message) {
     messages.push(message)
-    while (messages.length >= 30) {
-        messages.shift()
-    }
 }
 
 document.addEventListener('DOMContentLoaded', function() {
@@ -837,10 +834,6 @@ function handleCredentialResponse(response) {
         else {
             recognition.stop()
         }
-
-        // fix for no speech recog on sign in, IDEK
-        // document.getElementById('settings-btn').click()
-        // document.getElementById('closeSettings').click()
 
         // load chats
         let chats = data.chats
