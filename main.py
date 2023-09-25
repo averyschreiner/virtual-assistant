@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, Response
+from flask import Flask, render_template, request, Response, session
 from google.cloud import translate_v2 as translate, texttospeech
 from spotipy.oauth2 import SpotifyClientCredentials
 from newspaper import Article
@@ -8,7 +8,7 @@ from firebase_admin import credentials, db
 
 app = Flask(__name__)
 app.secret_key = config('SPOTIFY_SECRET')
-# app.config['SERVER_NAME'] = 'localhost:5000'
+app.config['SERVER_NAME'] = 'localhost:5000'
 
 cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json')
 firebase = firebase_admin.initialize_app(cred, {
@@ -21,6 +21,7 @@ spotify_client_id = '5dfb1e82a6ce457aab62e55f3f056792'
 creds = SpotifyClientCredentials(client_id=spotify_client_id, client_secret=spotify_secret)
 sp = spotipy.Spotify(client_credentials_manager=creds)
 gmaps = googlemaps.Client(key=config('GOOGLE_MAPS_SECRET'))
+
 langs = {'ar': ['ar-XA', 'ar-XA-Standard-C', 'ar-XA-Standard-D'],
          'bn': ['bn-IN', 'bn-IN-Standard-B', 'bn-IN-Standard-A'],
          'en': ['en-US', 'en-US-Studio-M', 'en-US-Studio-O'],
@@ -38,12 +39,70 @@ langs = {'ar': ['ar-XA', 'ar-XA-Standard-C', 'ar-XA-Standard-D'],
          'tr': ['tr-TR', 'tr-TR-Standard-E', 'tr-TR-Standard-A'],
          'vi': ['vi-VN', 'vi-VN-Standard-D', 'vi-VN-Standard-C']}
 
+functions = [
+    {
+        "name": "get_location_weather",
+        "description": "Get the current weather of a given location.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "location": {
+                    "type": "string",
+                    "description": "The city and state, e.g. San Francisco"                    
+                }
+            },
+            "required": ["location"]
+        }
+    },
+    {
+        "name": "get_local_weather",
+        "description": "Get the local weather when a location is not specified.",
+        "parameters": {
+            "type": "object",
+            "properties": {}
+        }
+    },
+]
+
+def get_location_weather(location):
+    # get lat and lng of location
+    geocode = gmaps.geocode(location)
+
+    lat = geocode[0]['geometry']['location']['lat']
+    lng = geocode[0]['geometry']['location']['lng']
+
+    # get forecast for the lat and lng
+    response = requests.get(f"https://api.weather.gov/points/{lat},{lng}").json()
+    forecast = requests.get(response['properties']['forecast']).json()
+    part1 = forecast['properties']['periods'][0]['name'].lower()
+    details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
+    part2 = forecast['properties']['periods'][1]['name'].lower()
+    details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
+
+    return f"{part1} is {details1} And for {part2}, {details2}"
+
+def get_local_weather():
+    if 'lat' in session and 'lng' in session:
+        # get forecast for the current user's lat and lng
+        response = requests.get(f"https://api.weather.gov/points/{session['lat']},{session['lng']}").json()
+        forecast = requests.get(response['properties']['forecast']).json()
+        part1 = forecast['properties']['periods'][0]['name'].lower()
+        details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
+        part2 = forecast['properties']['periods'][1]['name'].lower()
+        details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
+
+        return f"{part1} is {details1} And for {part2}, {details2}"
+    else:
+        return "To get local weather, you must give the webpage access to your location, or specificy a location."
+
+function_map = {"get_location_weather": get_location_weather, "get_local_weather": get_local_weather}
+
 @app.route('/')
 def home():
     return render_template('index.html')
 
 def check_tokens(messages):
-    encoding = tiktoken.encoding_for_model("gpt-4")
+    encoding = tiktoken.encoding_for_model("gpt-4-0613")
     max_tokens = 8192
     num_tokens = 0
     for message in messages:
@@ -55,12 +114,11 @@ def check_tokens(messages):
     num_tokens += 2
 
     # if we are over our token limit or the earliest message is from the assistant, pop and retry
-    if num_tokens > max_tokens or messages[1]['role'] == 'assistant':
+    if num_tokens > max_tokens:
         messages.pop(1)
         check_tokens(messages)
 
     return messages
-    
 
 @app.route('/chat', methods=['POST'])
 def chat():
@@ -68,32 +126,56 @@ def chat():
         messages = json.loads(request.data.decode('utf-8'))
         messages = check_tokens(messages)
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4-0613",
             messages=messages,
+            functions=functions,
             temperature=0.4)
-        gpt_text = response['choices'][0]['message']['content']
-        gpt_text = re.sub("\n```|```\n", "```", gpt_text)
-
-        # if a preference or something else silly ask davinci
-        if ('s an AI' in gpt_text):
-            question = messages[-2]['content']
-            try:
-                response = openai.Completion.create(
-                    model="text-davinci-003",
-                    prompt= question,
-                    temperature=0.8,
-                    max_tokens=2048)
-                response_text = response['choices'][0]['text']
-                messages.append({'role': 'assistant', 'content': response_text})
-                return {'messages': messages}
-            except:
-                return 'An error occurred, please refresh the page.'
-        else:
+        response_message = response['choices'][0]['message']
+        # model could call a function
+        if response_message.get("function_call"):
+            function_name = response_message['function_call']['name']
+            function_to_call = function_map[function_name]
+            function_args = json.loads(response_message['function_call']['arguments'])
+            
+            # upon response from a function, lets have the model create our user facing response
+            function_response = function_to_call(**function_args)
+            messages.append({'role': 'function', 'name': function_name, 'content': function_response})
+            second_response = openai.ChatCompletion.create(
+                model="gpt-4-0613",
+                messages=messages,
+                functions=functions,
+                temperature=0.4)
+            response_message = second_response['choices'][0]['message']
+            gpt_text = response_message['content']
+            gpt_text = re.sub("\n```|```\n", "```", gpt_text)
             messages.append({'role': 'assistant', 'content': gpt_text})
             return {'messages': messages}
-        
-    except:
-        return 'An error occurred, please refresh the page.'
+        else:
+            gpt_text = response_message['content']
+            gpt_text = re.sub("\n```|```\n", "```", gpt_text)
+
+            # if a preference or something else silly ask davinci
+            if ('s an AI' in gpt_text):
+                question = messages[-2]['content']
+                try:
+                    response = openai.Completion.create(
+                        model="text-davinci-003",
+                        prompt= question,
+                        temperature=0.8,
+                        max_tokens=2048)
+                    response_text = response['choices'][0]['text']
+                    messages.append({'role': 'assistant', 'content': response_text})
+                    return {'messages': messages}
+                except:
+                    messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page.'})
+                    return {'messages': messages}
+            else:
+                messages.append({'role': 'assistant', 'content': gpt_text})
+                return {'messages': messages}
+            
+    except Exception as e:
+        messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page.'})
+        return {'messages': messages}
 
 @app.route('/speak', methods=['POST'])
 def speak():
@@ -270,7 +352,7 @@ def create_title():
                 break
         messages = [{'role': 'user', 'content': 'Create a short title, 2 or 3 words, for a conversation that starts with: ' + message['content']}]
         response = openai.ChatCompletion.create(
-            model="gpt-4",
+            model="gpt-4-0613",
             messages=messages,
             temperature=0.4)
         gpt_text = response['choices'][0]['message']['content'].strip('"')
@@ -333,6 +415,17 @@ def save_settings():
         return 'Save Sucessful'
     except:
         return 'An Error Occurred'
+    
+@app.route('/set_location', methods=['POST'])
+def set_location():
+    try:
+        data = json.loads(request.data.decode('utf-8'))
+        session['lat'] = data['lat']
+        session['lng'] = data['lng']
+
+        return 'All good'
+    except:
+        return 'An Error Occured'
 
 if __name__ == '__main__':
     app.run(debug=True)

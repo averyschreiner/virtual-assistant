@@ -22,7 +22,9 @@ let roles = {"general": "answers questions precisely.",
 'poet': 'responds in an elegant and poetic way, and often rhymes responses.',
 'brief': "responds in as few words as possible. Don't leave out crucial information, and don't give lots of details in responses.",
 'elaborator': "responds in as much detail as possible. Don't leave any information out whatsoever."}
-let sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles['general']}`}]
+let sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles['general']}. Don't make assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.`}]
+// let sysMessage = [{"role": "system", "content": `You are ${assistantName}, a knowledgable AI assistant that ${roles['general']}`}, {"role": "system", "content": "Don't make any assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous."}]
+// let sysMessage = [{"role": "system", "content": `Don't make any assumptions about what values to plug into functions. Ask for clarification if a user request is ambiguous.`}]
 let messages = []
 let addressPref = ''
 let audio = document.getElementById('sound')
@@ -112,38 +114,39 @@ function get_response() {
     // shut down
     // else if (arg.toLowerCase() == 'shut down')
     // good morning
-    else if (arg.toLowerCase().includes('good morning') || arg.toLowerCase() == 'gm') {
-        if (addressPref == '') {
-            createResponseMessage(`Good morning!`)
-        }
-        else {
-            createResponseMessage(`Good morning ${addressPref}!`)
-        }
-        need_coords = false
-        city = ''
-        fetch('/weather', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({'city': city, 'lat': lat, 'lng': lng, 'need_coords': need_coords})
-        })
-        .then(response => response.text())
-        .then(text => {
-            if (need_coords) {
-                text = 'The weather in ' + city + text
-            }
-            else {
-                text = 'The weather for ' + text
-            }
-            if (speakersAllowed) {
-                get_speech(text)
-            }
-            pushMessage({'role': 'user', 'content': arg})
-            pushMessage({'role': 'assistant', 'content': text})
-            createResponseMessage(text)
-            createResponseMessage('Let me know if there is anything I can help you with! <3')
-        })
-    }
+    // else if (arg.toLowerCase().includes('good morning') || arg.toLowerCase() == 'gm') {
+    //     if (addressPref == '') {
+    //         createResponseMessage(`Good morning!`)
+    //     }
+    //     else {
+    //         createResponseMessage(`Good morning ${addressPref}!`)
+    //     }
+    //     need_coords = false
+    //     city = ''
+    //     fetch('/weather', {
+    //         method: 'POST',
+    //         headers: {'Content-Type': 'application/json'},
+    //         body: JSON.stringify({'city': city, 'lat': lat, 'lng': lng, 'need_coords': need_coords})
+    //     })
+    //     .then(response => response.text())
+    //     .then(text => {
+    //         if (need_coords) {
+    //             text = 'The weather in ' + city + text
+    //         }
+    //         else {
+    //             text = 'The weather for ' + text
+    //         }
+    //         if (speakersAllowed) {
+    //             get_speech(text)
+    //         }
+    //         pushMessage({'role': 'user', 'content': arg})
+    //         pushMessage({'role': 'assistant', 'content': text})
+    //         createResponseMessage(text)
+    //         createResponseMessage('Let me know if there is anything I can help you with! <3')
+    //     })
+    // }
     // weather command
+    /*
     else if (arg.includes('weather')) {
         weatherResponse()
         arg = arg.trim()
@@ -183,7 +186,7 @@ function get_response() {
             pushMessage({'role': 'assistant', 'content': text})
             createResponseMessage(text)
         })
-    }
+    } */
     // summarize article given link
     else if (urls != null) {
         summaryResponse()
@@ -636,8 +639,21 @@ document.addEventListener('DOMContentLoaded', function() {
 })
 
 function geoLocation(position) {
-    lat = position.coords.latitude
-    lng = position.coords.longitude
+    let pack = {'lat': position.coords.latitude, 'lng': position.coords.longitude}
+    fetch('/set_location', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(pack)
+    })
+    .then(response => response.text())
+    .then(text => {
+        if (text != 'All good') {
+            console.log(text)
+        }
+    })
+    .catch(error => {
+        console.error(error)
+    })
 }
 
 // chatgpt magic
@@ -852,6 +868,7 @@ function handleCredentialResponse(response) {
             `
             menu.appendChild(convobox)
         }
+        
     })
 }
 

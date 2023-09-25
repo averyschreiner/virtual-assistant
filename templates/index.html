@@ -161,12 +161,12 @@
                                 <td class="label" >"Jarvis, can humans eat grass?"</td>
                                 <td class="label" >To speak an input, just say the assistant name outloud followed by your question or instruction.</td>
                             </tr>
-                            <tr>
+                            <!-- <tr>
                                 <td class="label" >Daily Report</td>
                                 <td class="label" >"good morning" or "gm"</td>
                                 <td class="label" >"Good morning!"</td>
                                 <td class="label" >A great way to start the day!</td>
-                            </tr>
+                            </tr> -->
                             <tr>
                                 <td class="label" >Launch Spotify</td>
                                 <td class="label" >"on Spotify"</td>
@@ -174,15 +174,15 @@
                                 <td class="label" >Will not work albums, artists, or playlists... for now.</td>
                             </tr>
                             <tr>
-                                <td class="label" >Current Weather</td>
-                                <td class="label" >"weather"</td>
-                                <td class="label" >"What's the weather like today?"</td>
+                                <td class="label" >Local Weather</td>
+                                <td class="label" ><i>Inferred from input</i></td>
+                                <td class="label" >"Do I need a hoodie for my run today?"</td>
                                 <td class="label" >Limited to users in the USA.</td>
                             </tr>
                             <tr>
                                 <td class="label" >Weather of Location in USA</td>
-                                <td class="label" >"weather of <i>City</i>"</td>
-                                <td class="label" >"weather in New York City?"</td>
+                                <td class="label" ><i>Inferred from input</i></td>
+                                <td class="label" >"Should I pack an umbrella for my trip to NYC tomorrow?"</td>
                                 <td class="label" >Limited to named locations in the USA.</td>
                             </tr>
                             <tr>
@@ -211,7 +211,7 @@
         <div class="modal-content">
             <div class="modal-header">
             <h1 class="modal-title fs-3 label" id="modalLabel">Settings</h1>
-            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <button id='close-settings' type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body d-flex flex-column">
                 <div class="fs-5 label">Access</div>
