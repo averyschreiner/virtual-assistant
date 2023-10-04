@@ -167,14 +167,14 @@ def chat():
                     messages.append({'role': 'assistant', 'content': response_text})
                     return {'messages': messages}
                 except:
-                    messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page.'})
+                    messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page. (py 170)'})
                     return {'messages': messages}
             else:
                 messages.append({'role': 'assistant', 'content': gpt_text})
                 return {'messages': messages}
             
     except Exception as e:
-        messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page.'})
+        messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page. (py 177)'})
         return {'messages': messages}
 
 @app.route('/speak', methods=['POST'])
@@ -196,7 +196,7 @@ def speak():
         voice = texttospeech.VoiceSelectionParams(
             language_code=language_code,
             name=name)
-        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3)
+        audio_config = texttospeech.AudioConfig(audio_encoding=texttospeech.AudioEncoding.MP3, speaking_rate=1.3)
 
         response = client.synthesize_speech(
             input=synthesis_input,

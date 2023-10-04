@@ -225,10 +225,14 @@ function get_response() {
                     get_speech(textToBeSpoken)
                 }
             })
-            .catch(error => console.error(error))
+            .catch(() => {
+                console.log("js 229");
+                createResponseMessage("An error occurred, please refresh the page.")
             })
-        .catch(error => {
-            console.error(error)
+            })
+        .catch(() => {
+            console.log("js 234");
+            createResponseMessage("An error occurred, please refresh the page.")
         })
     }
     // normal gpt prompt
@@ -265,7 +269,10 @@ function get_response() {
             }
             set_messages()
         })
-        .catch(error => console.error(error))
+        .catch(() => {
+            console.log("js 273");
+            createResponseMessage("An error occurred, please refresh the page.")
+        } )
     }
     // mic input expired with no spoken content
     else {
@@ -337,8 +344,9 @@ function get_speech(result) {
         audio.play()
         textToBeSpoken = ''
     })
-    .catch(error => {
-        console.error(error)
+    .catch(() => {
+        console.log("js 348");
+        createResponseMessage("An error occurred, please refresh the page.")
     })
 }
 function translateSettings(lang) {
@@ -353,8 +361,9 @@ function translateSettings(lang) {
         .then(text => {
             labels[i].textContent = text
         })
-        .catch(error => {
-            console.error(error)
+        .catch(() => {
+            console.log("js 365");
+            createResponseMessage("An error occurred, please refresh the page.")
         })
     }
     // translate send message placeholder
@@ -367,8 +376,9 @@ function translateSettings(lang) {
     .then(text => {
         textarea.setAttribute('placeholder', text)
     })
-    .catch(error => {
-        console.error(error)
+    .catch(() => {
+        console.log("js 380");
+        createResponseMessage("An error occurred, please refresh the page.")
     })
 }
 
@@ -651,8 +661,9 @@ function geoLocation(position) {
             console.log(text)
         }
     })
-    .catch(error => {
-        console.error(error)
+    .catch(() => {
+        console.log("js 665");
+        createResponseMessage("An error occurred, please refresh the page.")
     })
 }
 
