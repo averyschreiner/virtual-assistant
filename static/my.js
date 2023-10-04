@@ -705,15 +705,15 @@ function handleCredentialResponse(response) {
                 <hr>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="allowMic" ${data.settings.mic ? 'checked' : ''}>
-                    <label class="form-check-label label" for="flexSwitchCheckDefault">Microphone</label>
+                    <label class="form-check-label label">Microphone</label>
                 </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="allowSpeakers" ${data.settings.sound ? 'checked' : ''}>
-                    <label class="form-check-label label" for="flexSwitchCheckDefault">Sound</label>
+                    <label class="form-check-label label">Sound</label>
                 </div>
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="spotifyDesktop" ${data.settings.spotify_desktop ? 'checked' : ''}>
-                    <label class="form-check-label label" for="flexSwitchCheckDefault">Spotify Desktop</label>
+                    <label class="form-check-label label">Spotify Desktop</label>
                 </div>
                 <hr>
                 <div class="fs-5 label">Preferences</div>
@@ -762,19 +762,19 @@ function handleCredentialResponse(response) {
                 <label class="label">Manners</label>
                 <div class="form-check">
                     <input class="form-check-input" type="radio" name="flexRadioDefault" id="madam" ${data.settings.manners == 'madam' ? 'checked' : ''}>
-                    <label class="form-check-label label" for="flexRadioDefault1">
+                    <label class="form-check-label label">
                         Madam
                     </label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="flexRadioDefault" id="sir" ${data.settings.manners == 'sir' ? 'checked' : ''}>
-                    <label class="form-check-label label" for="flexRadioDefault2">
+                    <label class="form-check-label label">
                         Sir
                     </label>
                   </div>
                   <div class="form-check">
                     <input class="form-check-input" type="radio" name="flexRadioDefault" id="noPref" ${data.settings.manners == '' ? 'checked' : ''}>
-                    <label class="form-check-label label" for="flexRadioDefault2">
+                    <label class="form-check-label label">
                         None
                     </label>
                   </div>

@@ -8,7 +8,7 @@ from firebase_admin import credentials, db
 
 app = Flask(__name__)
 app.secret_key = config('SPOTIFY_SECRET')
-app.config['SERVER_NAME'] = 'localhost:5000'
+# app.config['SERVER_NAME'] = 'localhost:5000'
 
 cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json')
 firebase = firebase_admin.initialize_app(cred, {
@@ -287,6 +287,7 @@ def get_user_info():
         id = data['id']
         user_ref = db.reference(f'users/{id}')
         user_data = user_ref.get()
+        user_ref.close()
 
         return user_data
     except:
@@ -300,6 +301,8 @@ def get_convo():
         chatNum = data['chatNum']
         chat_ref = db.reference(f'users/{id}/chats/{chatNum}/messages')
         chat_data = chat_ref.get()
+        chat_ref.close()
+
         return chat_data
     except:
         pass
@@ -314,11 +317,14 @@ def set_messages():
         message_ref = db.reference(f'users/{id}/chats/{chatNum}/messages')
         db_dict = {index: messages[index] for index in range(len(messages))}
         message_ref.set(db_dict)
+        message_ref.close()
 
         title_ref = db.reference(f'users/{id}/chats/{chatNum}/title')
         if title_ref.get() == None:
+            title_ref.close()
             return {'hasTitle': False, 'id': id, 'chatNum': chatNum}
         else:
+            title_ref.close()
             return {'hasTitle': True}
     except:
         pass
@@ -334,6 +340,8 @@ def set_title():
         title_ref.update({
             'title': title
         })
+        title_ref.close()
+
         return 'All Good'
     except:
         return 'An Error Occurred'
@@ -346,6 +354,7 @@ def create_title():
         chatNum = data['chatNum']
         message_ref = db.reference(f'users/{id}/chats/{chatNum}/messages')
         messages = message_ref.get()
+        message_ref.close()
         for m in messages:
             if m['role'] == 'user':
                 message = m
@@ -360,6 +369,7 @@ def create_title():
         title_ref.update({
             'title': gpt_text
         })
+        title_ref.close()
 
         return {'title': gpt_text, 'id': id, 'chatNum': chatNum}
     except:
@@ -372,6 +382,7 @@ def delete_all_chats():
         id = data['id']
         delete_ref = db.reference(f'users/{id}/chats')
         delete_ref.delete()
+        delete_ref.close()
 
         return 'Delete Sucessful'
     except:
@@ -385,6 +396,7 @@ def delete_chat():
         chatNum = data['chatNum']
         chat_ref = db.reference(f'users/{id}/chats/{chatNum}')
         chat_ref.delete()
+        chat_ref.close()
 
         return 'Delete Sucessful'
     except:
@@ -411,6 +423,7 @@ def save_settings():
             'mt_color': data['mt_color'],
             'bg_color': data['bg_color']
         })
+        settings_ref.close()
 
         return 'Save Sucessful'
     except:
