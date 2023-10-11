@@ -14,7 +14,7 @@ def get_secret(secret_id):
 # app init
 app = Flask(__name__)
 app.secret_key = get_secret('SPOTIFY_SECRET')
-app.config['SERVER_NAME'] = 'localhost:5000'
+# app.config['SERVER_NAME'] = 'localhost:5000'
 
 # db init
 cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json')
