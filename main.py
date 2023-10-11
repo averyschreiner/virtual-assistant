@@ -1,27 +1,36 @@
 from flask import Flask, render_template, request, Response, session
-from google.cloud import translate_v2 as translate, texttospeech
+from google.cloud import translate_v2 as translate, texttospeech, secretmanager
 from spotipy.oauth2 import SpotifyClientCredentials
 from newspaper import Article
 from decouple import config
 import json, openai, re, spotipy, requests, googlemaps, firebase_admin, tiktoken
 from firebase_admin import credentials, db
 
-app = Flask(__name__)
-app.secret_key = config('SPOTIFY_SECRET')
-# app.config['SERVER_NAME'] = 'localhost:5000'
+def get_secret(secret_id):
+    client = secretmanager.SecretManagerServiceClient()
+    response = client.access_secret_version(request={"name": f"projects/virtual-assistant-378601/secrets/{secret_id}/versions/latest"})
+    return response.payload.data.decode('UTF-8')
 
+# app init
+app = Flask(__name__)
+app.secret_key = get_secret('SPOTIFY_SECRET')
+app.config['SERVER_NAME'] = 'localhost:5000'
+
+# db init
 cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json')
 firebase = firebase_admin.initialize_app(cred, {
     'databaseURL': 'https://virtual-assistant-378601-default-rtdb.firebaseio.com/'
 })
 
-openai.api_key = config('OPENAI_SECRET')
-spotify_secret = config('SPOTIFY_SECRET')
+# services
+openai.api_key = get_secret('OPENAI_SECRET')
+spotify_secret = get_secret('SPOTIFY_SECRET')
 spotify_client_id = '5dfb1e82a6ce457aab62e55f3f056792'
 creds = SpotifyClientCredentials(client_id=spotify_client_id, client_secret=spotify_secret)
 sp = spotipy.Spotify(client_credentials_manager=creds)
-gmaps = googlemaps.Client(key=config('GOOGLE_MAPS_SECRET'))
+gmaps = googlemaps.Client(key=get_secret('GOOGLE_MAPS_SECRET'))
 
+# globals
 langs = {'ar': ['ar-XA', 'ar-XA-Standard-C', 'ar-XA-Standard-D'],
          'bn': ['bn-IN', 'bn-IN-Standard-B', 'bn-IN-Standard-A'],
          'en': ['en-US', 'en-US-Studio-M', 'en-US-Studio-O'],

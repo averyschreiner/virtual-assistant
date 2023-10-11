@@ -1,6 +1,4 @@
 .env
 __pycache__
 .cache
-app.yaml
-requirements.txt
 virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json
