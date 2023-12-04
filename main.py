@@ -1,20 +1,15 @@
 from flask import Flask, render_template, request, Response, session
-from google.cloud import translate_v2 as translate, texttospeech, secretmanager
+from google.cloud import translate_v2 as translate, texttospeech
 from spotipy.oauth2 import SpotifyClientCredentials
 from newspaper import Article
 from decouple import config
-import json, openai, re, spotipy, requests, googlemaps, firebase_admin, tiktoken
+import json, openai, re, spotipy, requests, googlemaps, firebase_admin
 from firebase_admin import credentials, db
-
-def get_secret(secret_id):
-    client = secretmanager.SecretManagerServiceClient()
-    response = client.access_secret_version(request={"name": f"projects/virtual-assistant-378601/secrets/{secret_id}/versions/latest"})
-    return response.payload.data.decode('UTF-8')
 
 # app init
 app = Flask(__name__)
-app.secret_key = get_secret('SPOTIFY_SECRET')
-#app.config['SERVER_NAME'] = 'localhost:5000'
+app.secret_key = config('SPOTIFY_SECRET')
+# app.config['SERVER_NAME'] = 'localhost:5000'
 
 # db init
 cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-6b325051f9.json')
@@ -23,12 +18,12 @@ firebase = firebase_admin.initialize_app(cred, {
 })
 
 # services
-openai.api_key = get_secret('OPENAI_SECRET')
-spotify_secret = get_secret('SPOTIFY_SECRET')
+openai.api_key = config('OPENAI_SECRET')
+spotify_secret = config('SPOTIFY_SECRET')
 spotify_client_id = '5dfb1e82a6ce457aab62e55f3f056792'
 creds = SpotifyClientCredentials(client_id=spotify_client_id, client_secret=spotify_secret)
 sp = spotipy.Spotify(client_credentials_manager=creds)
-gmaps = googlemaps.Client(key=get_secret('GOOGLE_MAPS_SECRET'))
+gmaps = googlemaps.Client(key=config('GOOGLE_MAPS_SECRET'))
 
 # globals
 langs = {'ar': ['ar-XA', 'ar-XA-Standard-C', 'ar-XA-Standard-D'],
@@ -110,30 +105,10 @@ function_map = {"get_location_weather": get_location_weather, "get_local_weather
 def home():
     return render_template('index.html')
 
-def check_tokens(messages):
-    encoding = tiktoken.encoding_for_model("gpt-4-0613")
-    max_tokens = 8192
-    num_tokens = 0
-    for message in messages:
-        num_tokens += 4
-        for k, v in message.items():
-            num_tokens += len(encoding.encode(v))
-            if k == "name":
-                num_tokens -= 1
-    num_tokens += 2
-
-    # if we are over our token limit or the earliest message is from the assistant, pop and retry
-    if num_tokens > max_tokens:
-        messages.pop(1)
-        check_tokens(messages)
-
-    return messages
-
 @app.route('/chat', methods=['POST'])
 def chat():
     try:
         messages = json.loads(request.data.decode('utf-8'))
-        messages = check_tokens(messages)
         response = openai.ChatCompletion.create(
             model="gpt-4-0613",
             messages=messages,
