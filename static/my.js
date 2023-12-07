@@ -104,63 +104,16 @@ function get_response() {
     urls = arg.match(regex)
 
     // spotify command
+    /*
     if (arg.toLowerCase().includes('on spotify')) {
         spotifyResponse()
         pushMessage({'role': 'user', 'content': arg})
         arg = arg.toLowerCase().replace('on spotify', '')
         arg = arg.slice(arg.lastIndexOf('play') + 4)
         spotify(arg)
-    }
-    // summarize article given link
-    else if (urls != null) {
-        summaryResponse()
-        fetch('/article', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/json'},
-            body: JSON.stringify({'url': urls[0]})
-        })
-        .then(response => response.text())
-        .then(text => {
-            arg = arg.replace(urls[0], '\n\n---\n\n' + text + '\n\n---\n\n')
-            pushMessage({'role': 'user', 'content': arg})
-            fetch('/chat', {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(sysMessage.concat(messages))
-            })
-            .then(response => response.json())
-            .then(result => {
-                messages = result.messages.slice(1)
-                responses = messages[messages.length - 1]['content'].split('```')
-
-                for (let i = 0; i < responses.length; i++) {
-                    let chunkOText = responses[i]
-                    if (i % 2 == 0) {
-                        if (speakersAllowed) {
-                            textToBeSpoken += chunkOText
-                        }
-                        createResponseMessage(chunkOText)
-                    }
-                    else {
-                        createCodeBlock(chunkOText)
-                    }
-                }
-                if (speakersAllowed) {
-                    get_speech(textToBeSpoken)
-                }
-            })
-            .catch(() => {
-                console.log("js 229");
-                createResponseMessage("An error occurred, please refresh the page.")
-            })
-            })
-        .catch(() => {
-            console.log("js 234");
-            createResponseMessage("An error occurred, please refresh the page.")
-        })
-    }
+    } */
     // normal gpt prompt
-    else if (arg !== '' && !isInitialPrompt) {
+    /*else*/if (arg !== '' && !isInitialPrompt) {
         pushMessage({'role': 'user', 'content': arg})
         afterPrompt()
 

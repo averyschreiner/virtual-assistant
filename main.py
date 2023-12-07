@@ -3,7 +3,7 @@ from google.cloud import translate_v2 as translate, texttospeech
 from spotipy.oauth2 import SpotifyClientCredentials
 from newspaper import Article
 from decouple import config
-import json, openai, re, spotipy, requests, googlemaps, firebase_admin
+import json, openai, re, spotipy, requests, googlemaps, firebase_admin, webbrowser
 from firebase_admin import credentials, db
 
 # app init
@@ -66,6 +66,34 @@ functions = [
             "properties": {}
         }
     },
+    {
+        "name": "get_article_text",
+        "description": "Extracts article text from the given url.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string",
+                    "description": "The url for the webpage to extract text from."                    
+                }
+            },
+            "required": ["url"]
+        }
+    },
+    {
+        "name": "play_track_on_spotify",
+        "description": "Plays the track based on the given query on Spotify.",
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "query": {
+                    "type": "string",
+                    "description": "The spotify query."
+                }
+            },
+            "required": ["query"]
+        }
+    },
 ]
 
 def get_location_weather(location):
@@ -99,7 +127,39 @@ def get_local_weather():
     else:
         return "To get local weather, you must give the webpage access to your location, or specificy a location."
 
-function_map = {"get_location_weather": get_location_weather, "get_local_weather": get_local_weather}
+def get_article_text(url):
+    print(f"\nGetting: {url}")
+    try:
+        article = Article(url)
+        article.download()
+        article.parse()
+        authors = ', '.join(article.authors)
+        print(f"\nTitle:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}\n")
+        return f"Title:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}"
+
+    except:
+        pass
+
+def play_track_on_spotify(query):
+    print(f"\nquery is {query}\n")
+    try:
+        results = sp.search(q=query, type=['track'], limit=1)
+        track = results['tracks']['items'][0]['uri']
+        spotify_desktop = False
+
+        if spotify_desktop:
+            webbrowser.open(track)
+        else:
+            track_uri = track.split(":")[2]
+            url = 'https://open.spotify.com/track/' + track_uri
+            webbrowser.open_new_tab(url)
+
+        return "Track successfully played. Compliment the user's choice."
+    except:
+        return "An error occurred while trying playing the track on Spotify."
+
+
+function_map = {"get_location_weather": get_location_weather, "get_local_weather": get_local_weather, "get_article_text": get_article_text, "play_track_on_spotify": play_track_on_spotify}
 
 @app.route('/')
 def home():
@@ -118,6 +178,7 @@ def chat():
         # model could call a function
         if response_message.get("function_call"):
             function_name = response_message['function_call']['name']
+            print("\nWants to call function", function_name)
             function_to_call = function_map[function_name]
             function_args = json.loads(response_message['function_call']['arguments'])
             
@@ -192,21 +253,6 @@ def speak():
     except: 
         pass
 
-@app.route('/article', methods=['POST'])
-def article():
-    try:
-        data = json.loads(request.data.decode('utf-8'))
-        url = data['url']
-        article = Article(url)
-        article.download()
-        article.parse()
-        authors = ', '.join(article.authors)
-
-        return f"Title:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}"
-
-    except:
-        pass
-
 @app.route('/translate', methods=['POST'])
 def switchLang():
     try:
@@ -221,16 +267,18 @@ def switchLang():
     except:
         pass
 
-@app.route('/spotify_query', methods=['POST'])
-def spotify_query():
-    try:
-        data = json.loads(request.data.decode('utf-8'))
-        query = data['query']
-        results = sp.search(q=query, type=['track'], limit=1)
+# @app.route('/spotify_query', methods=['POST'])
+# def spotify_query():
+#     try:
+#         data = json.loads(request.data.decode('utf-8'))
+#         query = data['query']
+#         results = sp.search(q=query, type=['track'], limit=1)
+
+#         print(results['tracks']['items'][0]['uri'])
         
-        return str(results['tracks']['items'][0]['uri'])
-    except:
-        pass
+#         return str(results['tracks']['items'][0]['uri'])
+#     except:
+#         pass
 
 @app.route('/weather', methods=['POST'])
 def weather():
