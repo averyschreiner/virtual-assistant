@@ -128,35 +128,34 @@ def get_local_weather():
         return "To get local weather, you must give the webpage access to your location, or specificy a location."
 
 def get_article_text(url):
-    print(f"\nGetting: {url}")
     try:
         article = Article(url)
         article.download()
         article.parse()
         authors = ', '.join(article.authors)
-        print(f"\nTitle:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}\n")
         return f"Title:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}"
-
     except:
         pass
 
 def play_track_on_spotify(query):
-    print(f"\nquery is {query}\n")
+    results = sp.search(q=query, type=['track'], limit=1)
+    track = results['tracks']['items'][0]['uri']
+
     try:
-        results = sp.search(q=query, type=['track'], limit=1)
-        track = results['tracks']['items'][0]['uri']
-        spotify_desktop = False
-
-        if spotify_desktop:
-            webbrowser.open(track)
-        else:
-            track_uri = track.split(":")[2]
-            url = 'https://open.spotify.com/track/' + track_uri
-            webbrowser.open_new_tab(url)
-
-        return "Track successfully played. Compliment the user's choice."
+        webbrowser.open(track)
+        return "Track is now playing on Spotify desktop. Compliment the user's choice."
     except:
-        return "An error occurred while trying playing the track on Spotify."
+        pass
+
+    try:
+        track_uri = track.split(":")[2]
+        url = 'https://open.spotify.com/track/' + track_uri
+        webbrowser.open_new_tab(url)
+        return "Track is now playing on Spotify web app. Compliment the user's choice."
+    except:
+        pass
+
+    return "An error occurred while trying playing the track on Spotify."
 
 
 function_map = {"get_location_weather": get_location_weather, "get_local_weather": get_local_weather, "get_article_text": get_article_text, "play_track_on_spotify": play_track_on_spotify}
@@ -178,7 +177,6 @@ def chat():
         # model could call a function
         if response_message.get("function_call"):
             function_name = response_message['function_call']['name']
-            print("\nWants to call function", function_name)
             function_to_call = function_map[function_name]
             function_args = json.loads(response_message['function_call']['arguments'])
             
@@ -250,7 +248,7 @@ def speak():
         )
         
         return Response(response.audio_content, mimetype='audio/mp3')
-    except: 
+    except:
         pass
 
 @app.route('/translate', methods=['POST'])
@@ -266,19 +264,6 @@ def switchLang():
 
     except:
         pass
-
-# @app.route('/spotify_query', methods=['POST'])
-# def spotify_query():
-#     try:
-#         data = json.loads(request.data.decode('utf-8'))
-#         query = data['query']
-#         results = sp.search(q=query, type=['track'], limit=1)
-
-#         print(results['tracks']['items'][0]['uri'])
-        
-#         return str(results['tracks']['items'][0]['uri'])
-#     except:
-#         pass
 
 @app.route('/weather', methods=['POST'])
 def weather():

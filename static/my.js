@@ -100,20 +100,7 @@ function get_response() {
     hasAttention = false
     finalText = ''
     arg = String(bubble.textContent)
-    let regex = /((http|https):\/\/[^\s]+)/g
-    urls = arg.match(regex)
-
-    // spotify command
-    /*
-    if (arg.toLowerCase().includes('on spotify')) {
-        spotifyResponse()
-        pushMessage({'role': 'user', 'content': arg})
-        arg = arg.toLowerCase().replace('on spotify', '')
-        arg = arg.slice(arg.lastIndexOf('play') + 4)
-        spotify(arg)
-    } */
-    // normal gpt prompt
-    /*else*/if (arg !== '' && !isInitialPrompt) {
+    if (arg !== '' && !isInitialPrompt) {
         pushMessage({'role': 'user', 'content': arg})
         afterPrompt()
 
@@ -569,7 +556,23 @@ function handleCredentialResponse(response) {
     })
     .then(response => response.json())
     .then(data => {
-        // users settings
+        // access
+        micAllowed = data.settings.mic
+        speakersAllowed = data.settings.sound
+        spotifyDesktop = data.settings.spotify_desktop        
+        
+        // mic access
+        if (micAllowed) {
+            try {
+                recognition.start()
+            }
+            catch (error) {
+            }
+        }
+        else {
+            recognition.stop()
+        }
+        
         settingsModal.innerHTML = `
         <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
         <div class="modal-content">
@@ -688,11 +691,6 @@ function handleCredentialResponse(response) {
         </div>
         `
 
-        // access
-        micAllowed = data.settings.mic
-        speakersAllowed = data.settings.sound
-        spotifyDesktop = data.settings.spotify_desktop
-
         // preferences
         assistantName = data.settings.assistant_name
         document.title = assistantName
@@ -726,18 +724,6 @@ function handleCredentialResponse(response) {
             bubble.style.backgroundColor = myBubbleColor
             bubble.style.color = myTextColor
         })
-
-        // mic access
-        if (micAllowed) {
-            try {
-                recognition.start()
-            }
-            catch (error) {
-            }
-        }
-        else {
-            recognition.stop()
-        }
 
         // load chats
         let chats = data.chats
