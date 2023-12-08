@@ -155,6 +155,7 @@ def play_track_on_spotify(query):
     except:
         pass
 
+
     return "An error occurred while trying playing the track on Spotify."
 
 

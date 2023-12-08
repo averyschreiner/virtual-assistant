@@ -4,7 +4,6 @@ let isInitialPrompt = true
 let hasAttention = false
 let micAllowed = false
 let speakersAllowed = false
-let spotifyDesktop = false
 let responseBubbleColor = '#6c757d'
 let responseTextColor = '#ffffff'
 let myBubbleColor = '#0d6efd'
@@ -246,26 +245,6 @@ function translateSettings(lang) {
     })
 }
 
-
-function spotify(query) {
-    fetch('/spotify_query', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({'query': query})
-    })
-    .then(response => response.text())
-    .then(text => {
-        if (spotifyDesktop) {
-            window.location.href = text
-        }
-        else {
-            let trackURI = text.split(":")[2]
-            let url = "https://open.spotify.com/track/" + trackURI
-            window.open(url, "_blank")
-        }
-    })
-}
-
 // on screen text bubble
 function createInputMessage(text) {
     createMessage('justify-content-end')
@@ -371,36 +350,6 @@ function afterPrompt() {
     createResponseMessage(picked)
 }
 
-function spotifyResponse() {
-    if (lang != 'en') {return} // lang support comming soon
-
-    let picked = ''
-    let spotifyResponses = ["Good pick! I'm on it.", "You have greate taste!", "Solid choice! Playing it now.", "One of my favorites!"]
-    picked = spotifyResponses[Math.floor(Math.random() * spotifyResponses.length)]
-    pushMessage({'role': 'assistant', 'content': picked})
-    createResponseMessage(picked)
-}
-
-function summaryResponse() {
-    if (lang != 'en') {return} // lang support comming soon
-
-    let picked = ''
-    let summaryResponses = ["Reading up on it now.", "Let me skim this really quick.", "Let me take a look.", "Let's see what we have here."]
-    picked = summaryResponses[Math.floor(Math.random() * summaryResponses.length)]
-    pushMessage({'role': 'assistant', 'content': picked})
-    createResponseMessage(picked)
-}
-
-function weatherResponse() {
-    if (lang != 'en') {return} // lang support comming soon
-
-    let picked = ''
-    let weatherResponses = ['Let me check the forecast briefly.', "Let me read the forecast for the next few hours."]
-    picked = weatherResponses[Math.floor(Math.random() * weatherResponses.length)]
-    pushMessage({'role': 'assistant', 'content': picked})
-    createResponseMessage(picked)
-}
-
 // adjust to bottom (most recent) of convo
 function scrollToBottom() {
     window.scrollTo(0, document.body.scrollHeight)
@@ -412,7 +361,6 @@ function updateSettings() {
     // access
     micAllowed = document.getElementById('allowMic').checked
     speakersAllowed = document.getElementById('allowSpeakers').checked
-    spotifyDesktop = document.getElementById('spotifyDesktop').checked
 
     // preferences
     assistantName = document.getElementById('name').value
@@ -476,7 +424,6 @@ function updateSettings() {
             body: JSON.stringify({'id': id,
                                 'mic': micAllowed,
                                 'sound': speakersAllowed,
-                                'spotify_desktop': spotifyDesktop,
                                 'assistant_name': assistantName,
                                 'assistant_personality': personality,
                                 'lang': lang,
@@ -559,8 +506,7 @@ function handleCredentialResponse(response) {
         // access
         micAllowed = data.settings.mic
         speakersAllowed = data.settings.sound
-        spotifyDesktop = data.settings.spotify_desktop        
-        
+
         // mic access
         if (micAllowed) {
             try {
@@ -590,10 +536,6 @@ function handleCredentialResponse(response) {
                 <div class="form-check form-switch">
                     <input class="form-check-input" type="checkbox" role="switch" id="allowSpeakers" ${data.settings.sound ? 'checked' : ''}>
                     <label class="form-check-label label">Sound</label>
-                </div>
-                <div class="form-check form-switch">
-                    <input class="form-check-input" type="checkbox" role="switch" id="spotifyDesktop" ${data.settings.spotify_desktop ? 'checked' : ''}>
-                    <label class="form-check-label label">Spotify Desktop</label>
                 </div>
                 <hr>
                 <div class="fs-5 label">Preferences</div>
