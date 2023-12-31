@@ -133,7 +133,7 @@ function get_response() {
             set_messages()
         })
         .catch(() => {
-            console.log("js 273");
+            // console.log("js 273");
             createResponseMessage("An error occurred, please refresh the page.")
         } )
     }
@@ -208,7 +208,7 @@ function get_speech(result) {
         textToBeSpoken = ''
     })
     .catch(() => {
-        console.log("js 348");
+        // console.log("js 348");
         createResponseMessage("An error occurred, please refresh the page.")
     })
 }
@@ -225,7 +225,7 @@ function translateSettings(lang) {
             labels[i].textContent = text
         })
         .catch(() => {
-            console.log("js 365");
+            // console.log("js 365");
             createResponseMessage("An error occurred, please refresh the page.")
         })
     }
@@ -240,7 +240,7 @@ function translateSettings(lang) {
         textarea.setAttribute('placeholder', text)
     })
     .catch(() => {
-        console.log("js 380");
+        // console.log("js 380");
         createResponseMessage("An error occurred, please refresh the page.")
     })
 }
@@ -395,7 +395,8 @@ function updateSettings() {
     // mic access
     if (micAllowed) {
         try {
-            recognition.start()
+            // recognition.start()
+            startRecognition()
         }
         catch (error) {
         }
@@ -469,11 +470,11 @@ function geoLocation(position) {
     .then(response => response.text())
     .then(text => {
         if (text != 'All good') {
-            console.log(text)
+            // console.log(text)
         }
     })
     .catch(() => {
-        console.log("js 665");
+        // console.log("js 665");
         createResponseMessage("An error occurred, please refresh the page.")
     })
 }
@@ -510,9 +511,13 @@ function handleCredentialResponse(response) {
         // mic access
         if (micAllowed) {
             try {
-                recognition.start()
+                // console.log('before calling startRecognition')
+                // recognition.start()
+                startRecognition()
+                // console.log('after')
             }
             catch (error) {
+                // console.log(error)
             }
         }
         else {
@@ -632,7 +637,7 @@ function handleCredentialResponse(response) {
         </div>
         </div>
         `
-
+        
         // preferences
         assistantName = data.settings.assistant_name
         document.title = assistantName
@@ -791,8 +796,13 @@ function newConvo() {
 // constant listening
 recognition.onend = () => {
     if (micAllowed) {
-        recognition.start()
+        // recognition.start()
+        startRecognition()
     }
+}
+
+function startRecognition() {
+    recognition.start()
 }
 
 let textarea = document.getElementById('textarea')

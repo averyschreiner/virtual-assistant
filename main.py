@@ -9,7 +9,7 @@ from firebase_admin import credentials, db
 # app init
 app = Flask(__name__)
 app.secret_key = config('SPOTIFY_SECRET')
-app.config['SERVER_NAME'] = 'localhost:5000'
+# app.config['SERVER_NAME'] = 'localhost:5000'
 
 # db init
 cred = credentials.Certificate('virtual-assistant-378601-firebase-adminsdk-pmfkd-58bb54e2de.json')
@@ -97,26 +97,15 @@ functions = [
 ]
 
 def get_location_weather(location):
-    # get lat and lng of location
-    geocode = gmaps.geocode(location)
+    try: 
+        # get lat and lng of location
+        geocode = gmaps.geocode(location)
 
-    lat = geocode[0]['geometry']['location']['lat']
-    lng = geocode[0]['geometry']['location']['lng']
+        lat = geocode[0]['geometry']['location']['lat']
+        lng = geocode[0]['geometry']['location']['lng']
 
-    # get forecast for the lat and lng
-    response = requests.get(f"https://api.weather.gov/points/{lat},{lng}").json()
-    forecast = requests.get(response['properties']['forecast']).json()
-    part1 = forecast['properties']['periods'][0]['name'].lower()
-    details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
-    part2 = forecast['properties']['periods'][1]['name'].lower()
-    details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
-
-    return f"{part1} is {details1} And for {part2}, {details2}"
-
-def get_local_weather():
-    if 'lat' in session and 'lng' in session:
-        # get forecast for the current user's lat and lng
-        response = requests.get(f"https://api.weather.gov/points/{session['lat']},{session['lng']}").json()
+        # get forecast for the lat and lng
+        response = requests.get(f"https://api.weather.gov/points/{lat},{lng}").json()
         forecast = requests.get(response['properties']['forecast']).json()
         part1 = forecast['properties']['periods'][0]['name'].lower()
         details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
@@ -124,8 +113,28 @@ def get_local_weather():
         details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
 
         return f"{part1} is {details1} And for {part2}, {details2}"
-    else:
-        return "To get local weather, you must give the webpage access to your location, or specificy a location."
+    except:
+        return "Unable to fetch weather currently, please try again later."
+
+def get_local_weather():
+    try:
+        if 'lat' in session and 'lng' in session:
+            # get forecast for the current user's lat and lng
+            response = requests.get(f"https://api.weather.gov/points/{session['lat']},{session['lng']}").json()
+            # KNOW ISSUE AT THIS ENDPOINT, FIX COMING 1 JAN 2024 APPARENTLY
+            forecast = requests.get(response['properties']['forecast']).json()
+            # pretty_json = json.dumps(forecast, indent=4)
+            # print('response', pretty_json)
+            part1 = forecast['properties']['periods'][0]['name'].lower()
+            details1 = forecast['properties']['periods'][0]['detailedForecast'].lower()
+            part2 = forecast['properties']['periods'][1]['name'].lower()
+            details2 = forecast['properties']['periods'][1]['detailedForecast'].lower()
+
+            return f"{part1} is {details1} And for {part2}, {details2}"
+        else:
+            return "To get local weather, you must give the webpage access to your location, or specificy a location."
+    except:
+        return "Unable to fetch weather currently, please try again later."
 
 def get_article_text(url):
     try:
@@ -135,7 +144,7 @@ def get_article_text(url):
         authors = ', '.join(article.authors)
         return f"Title:{article.title}\n\nAuthor:{authors}\n\nDate:{article.publish_date}\n\n{article.text}"
     except:
-        pass
+        return "Unable to fetch article text, please try again later."
 
 def play_track_on_spotify(query):
     results = sp.search(q=query, type=['track'], limit=1)
@@ -154,7 +163,6 @@ def play_track_on_spotify(query):
         return "Track is now playing on Spotify web app. Compliment the user's choice."
     except:
         pass
-
 
     return "An error occurred while trying playing the track on Spotify."
 
@@ -180,7 +188,6 @@ def chat():
             function_name = response_message['function_call']['name']
             function_to_call = function_map[function_name]
             function_args = json.loads(response_message['function_call']['arguments'])
-            
             # upon response from a function, lets have the model create our user facing response
             function_response = function_to_call(**function_args)
             messages.append({'role': 'function', 'name': function_name, 'content': function_response})
@@ -197,28 +204,11 @@ def chat():
         else:
             gpt_text = response_message['content']
             gpt_text = re.sub("\n```|```\n", "```", gpt_text)
-
-            # if a preference or something else silly ask davinci
-            if ('s an AI' in gpt_text):
-                question = messages[-2]['content']
-                try:
-                    response = openai.Completion.create(
-                        model="text-davinci-003",
-                        prompt= question,
-                        temperature=0.8,
-                        max_tokens=2048)
-                    response_text = response['choices'][0]['text']
-                    messages.append({'role': 'assistant', 'content': response_text})
-                    return {'messages': messages}
-                except:
-                    messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page. (py 170)'})
-                    return {'messages': messages}
-            else:
-                messages.append({'role': 'assistant', 'content': gpt_text})
-                return {'messages': messages}
-            
+            messages.append({'role': 'assistant', 'content': gpt_text})
+            return {'messages': messages}
+        
     except Exception as e:
-        messages.append({'role': 'assistant', 'content': 'An error occured, please refresh the page. (py 177)'})
+        messages.append({'role': 'assistant', 'content': "I'm sorry, an error occurred. Please refresh the page and try again."})
         return {'messages': messages}
 
 @app.route('/speak', methods=['POST'])
@@ -419,7 +409,6 @@ def save_settings():
         settings_ref.update({
             'mic': data['mic'],
             'sound': data['sound'],
-            'spotify_desktop': data['spotify_desktop'],
             'assistant_name': data['assistant_name'],
             'assistant_personality': data['assistant_personality'],
             'lang': data['lang'],
@@ -433,7 +422,7 @@ def save_settings():
         })
 
         return 'Save Sucessful'
-    except:
+    except Exception as e:
         return 'An Error Occurred'
     
 @app.route('/set_location', methods=['POST'])
